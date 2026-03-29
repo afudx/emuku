@@ -8,6 +8,8 @@ export async function iosHelp(): Promise<void> {
   console.log(c.bold('COMMANDS'));
   row('emuku ios device list', 'List all simulators (booted + shutdown)');
   row('emuku ios device start <id>', 'Start a simulator by UDID or name');
+  row('emuku ios device status', 'Show all running iOS devices');
+  row('emuku ios device stop <id>', 'Stop a running simulator');
   row('emuku app run ios [id]', 'Run Flutter app on an iOS simulator');
   console.log();
 
