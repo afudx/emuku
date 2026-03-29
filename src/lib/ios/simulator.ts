@@ -71,6 +71,26 @@ export function startDevice(udid: string): { success: boolean; alreadyBooted: bo
   return { success: true, alreadyBooted: false };
 }
 
+export function stopDevice(udid: string): { success: boolean; error?: string } {
+  const devices = listDevices();
+  const device = devices.find(d => d.udid === udid);
+
+  if (!device) {
+    return { success: false, error: `Device not found: ${udid}` };
+  }
+
+  if (device.state !== 'Booted') {
+    return { success: true }; // Already stopped
+  }
+
+  const result = exec(`xcrun simctl shutdown ${udid}`);
+  if (result.exitCode !== 0) {
+    return { success: false, error: result.stderr || result.stdout };
+  }
+
+  return { success: true };
+}
+
 export function findDevice(query: string): IOSDevice | null {
   const devices = listDevices();
   const byUdid = devices.find(d => d.udid === query);

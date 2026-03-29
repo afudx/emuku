@@ -39,6 +39,31 @@ export function startDevice(avdName: string): { success: boolean; error?: string
   return { success: true };
 }
 
+export function stopDevice(avdName: string): { success: boolean; error?: string } {
+  const adbPath = resolveAndroidTool('adb');
+  if (!adbPath) {
+    return { success: false, error: 'Android adb not found. Run: emuku create android' };
+  }
+
+  const devices = listDevices();
+  const device = devices.find(d => d.avdName === avdName);
+
+  if (!device) {
+    return { success: false, error: `AVD not found: ${avdName}` };
+  }
+
+  if (device.state !== 'Running' || !device.port) {
+    return { success: true }; // Already stopped
+  }
+
+  const result = exec(`"${adbPath}" -s emulator-${device.port} emu kill`);
+  if (result.exitCode !== 0) {
+    return { success: false, error: result.stderr || result.stdout };
+  }
+
+  return { success: true };
+}
+
 export function findDevice(query: string): AndroidDevice | null {
   const devices = listDevices();
   const lower = query.toLowerCase();
