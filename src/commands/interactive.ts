@@ -161,10 +161,7 @@ async function iosMenu(): Promise<Nav> {
 
     const action = actions[choice];
     if (action) {
-      console.log();
-      await action();
-      console.log();
-      await pause();
+      await runAction(action);
     }
   }
 }
