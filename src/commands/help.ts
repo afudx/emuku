@@ -31,6 +31,11 @@ export async function help(): Promise<void> {
   row('emuku create android', 'Check & install Android emulator prerequisites');
   console.log();
 
+  console.log(c.bold('APP'));
+  row('emuku app run ios [id]', 'Run Flutter app on an iOS simulator');
+  row('emuku app run android [id]', 'Run Flutter app on an Android emulator');
+  console.log();
+
   console.log(c.bold('TOOLS'));
   row('emuku tools bash-completion', 'Install shell completions (bash/zsh)');
   console.log();

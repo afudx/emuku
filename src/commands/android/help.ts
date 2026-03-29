@@ -8,6 +8,7 @@ export async function androidHelp(): Promise<void> {
   console.log(c.bold('COMMANDS'));
   row('emuku android device list', 'List all emulators (running + stopped)');
   row('emuku android device start <id>', 'Start an emulator by AVD name');
+  row('emuku app run android [id]', 'Run Flutter app on an Android emulator');
   console.log();
 
   console.log(c.bold('SETUP'));

@@ -8,6 +8,8 @@ import { androidDeviceStart } from './commands/android/device-start.js';
 import { createIos } from './commands/create/ios.js';
 import { createAndroid } from './commands/create/android.js';
 import { bashCompletion } from './commands/tools/bash-completion.js';
+import { appRunIos } from './commands/app/run-ios.js';
+import { appRunAndroid } from './commands/app/run-android.js';
 
 const args = process.argv.slice(2);
 
@@ -39,6 +41,11 @@ async function main(): Promise<void> {
 
   if (a0 === 'tools' && a1 === 'bash-completion') {
     return bashCompletion();
+  }
+
+  if (a0 === 'app') {
+    if (a1 === 'run' && a2 === 'ios') return appRunIos(a3);
+    if (a1 === 'run' && a2 === 'android') return appRunAndroid(a3);
   }
 
   console.error(`Unknown command: ${args.join(' ')}\n`);
