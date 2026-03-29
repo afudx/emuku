@@ -82,6 +82,7 @@ async function selectMenu(
       message: ' ',
       choices: choices as Array<{ name: string; message: string }>,
       prefix: PAD,
+      margin: [0, 0, 0, PAD.length + 1],
     });
 
     promptInstance.options.header = getHeader(subtitle);
