@@ -108,39 +108,45 @@ export async function startInteractive(): Promise<void> {
     return help();
   }
 
-  while (true) {
-    const choice = await selectMenu([
-      item('ios',     '○', 'iOS'),
-      item('android', '△', 'Android'),
-      item('runtime', '◇', 'Runtime'),
-      item('setup',   '⚙', 'Setup'),
-      item('utility', '⊞', 'Utility'),
-      SEP(),
-      SEP(),
-      { name: 'exit', message: '✕  Exit' },
-    ]);
+  process.stdout.write('\x1b[?1049h');
 
-    if (choice === 'exit') {
-      console.clear();
-      return;
-    }
+  try {
+    while (true) {
+      const choice = await selectMenu([
+        item('ios',     '○', 'iOS'),
+        item('android', '△', 'Android'),
+        item('runtime', '◇', 'Runtime'),
+        item('setup',   '⚙', 'Setup'),
+        item('utility', '⊞', 'Utility'),
+        SEP(),
+        SEP(),
+        { name: 'exit', message: '✕  Exit' },
+      ]);
 
-    const handlers: Record<string, () => Promise<Nav>> = {
-      ios: iosMenu,
-      android: androidMenu,
-      runtime: runtimeMenu,
-      setup: setupMenu,
-      utility: utilityMenu,
-    };
-
-    const handler = handlers[choice];
-    if (handler) {
-      const nav = await handler();
-      if (nav === 'exit') {
-        console.clear();
+      if (choice === 'exit') {
+        process.stdout.write('\x1b[?1049l');
         return;
       }
+
+      const handlers: Record<string, () => Promise<Nav>> = {
+        ios: iosMenu,
+        android: androidMenu,
+        runtime: runtimeMenu,
+        setup: setupMenu,
+        utility: utilityMenu,
+      };
+
+      const handler = handlers[choice];
+      if (handler) {
+        const nav = await handler();
+        if (nav === 'exit') {
+          process.stdout.write('\x1b[?1049l');
+          return;
+        }
+      }
     }
+  } catch {
+    process.stdout.write('\x1b[?1049l');
   }
 }
 
