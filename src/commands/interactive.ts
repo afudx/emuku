@@ -82,6 +82,7 @@ async function selectMenu(
       message: ' ',
       choices: choices as Array<{ name: string; message: string }>,
       prefix: PAD,
+      styles: { primary: c.white },
     });
 
     promptInstance.options.header = getHeader(subtitle);
@@ -270,17 +271,22 @@ async function utilityMenu(): Promise<Nav> {
 
 async function runAction(action: () => Promise<void>): Promise<void> {
   console.clear();
+  let cancelled = false;
   try {
     await action();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg !== '' && msg !== 'undefined' && e !== undefined) {
+    if (msg === '' || msg === 'undefined' || e === undefined) {
+      cancelled = true;
+    } else {
       console.error(c.red(`${PAD}Error: ${msg}`));
     }
   }
-  console.log();
-  console.log(c.dim(`${PAD}Press any key to continue...`));
-  await waitForKey();
+  if (!cancelled) {
+    console.log();
+    console.log(c.dim(`${PAD}Press any key to continue...`));
+    await waitForKey();
+  }
 }
 
 function waitForKey(): Promise<void> {
