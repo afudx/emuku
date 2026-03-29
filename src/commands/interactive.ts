@@ -205,8 +205,8 @@ async function androidMenu(): Promise<Nav> {
 async function runtimeMenu(): Promise<Nav> {
   while (true) {
     const choice = await selectMenu([
-      item('run-ios',     '▶', 'Run iOS'),
-      item('run-android', '▶', 'Run Android'),
+      { name: 'run-ios',     message: `▶  Run in iOS Simulator       ${c.dim('run flutter app in cwd in iOS')}` },
+      { name: 'run-android', message: `▶  Run in Android Emulator    ${c.dim('run flutter app in cwd in Android')}` },
       item('status',      '◉', 'Status'),
       ...navItems(),
     ], 'back', '◇  Runtime');
