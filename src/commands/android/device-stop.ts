@@ -16,23 +16,12 @@ async function selectAndStop(): Promise<boolean> {
     value: d.avdName,
   }));
 
-  let response: { device: string };
-  try {
-    response = await prompt<{ device: string }>({
-      type: 'select',
-      name: 'device',
-      message: `Select an emulator to stop:
-
-Esc to cancel`,
-      choices,
-    });
-  } catch (e) {
-    if (e === '') {
-      logger.info('Cancelled');
-      process.exit(0);
-    }
-    throw e;
-  }
+  const response = await prompt<{ device: string }>({
+    type: 'select',
+    name: 'device',
+    message: `Select an emulator to stop:\n\nEsc to cancel`,
+    choices,
+  });
 
   const targetAvd = response.device;
 

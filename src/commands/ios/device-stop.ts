@@ -16,23 +16,12 @@ async function selectAndStop(): Promise<boolean> {
     value: d.udid,
   }));
 
-  let response: { device: string };
-  try {
-    response = await prompt<{ device: string }>({
-      type: 'select',
-      name: 'device',
-      message: `Select a simulator to stop:
-
-Esc to cancel`,
-      choices,
-    });
-  } catch (e) {
-    if (e === '') {
-      logger.info('Cancelled');
-      process.exit(0);
-    }
-    throw e;
-  }
+  const response = await prompt<{ device: string }>({
+    type: 'select',
+    name: 'device',
+    message: `Select a simulator to stop:\n\nEsc to cancel`,
+    choices,
+  });
 
   const targetUdid = response.device;
   const targetName = running.find(d => d.udid === targetUdid)?.name ?? targetUdid;

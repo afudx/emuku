@@ -4,8 +4,8 @@ import { logger } from '../../utils/logger.js';
 
 export async function createIos(): Promise<void> {
   if (process.platform !== 'darwin') {
-    logger.error('iOS simulators are only available on macOS.');
-    process.exit(1);
+    logger.error('iOS simulator management is only supported on macOS');
+    return;
   }
 
   logger.heading('iOS Simulator Prerequisites');
