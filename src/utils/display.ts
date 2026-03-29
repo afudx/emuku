@@ -20,8 +20,3 @@ export function statusBadge(state: string): string {
   return c.dim(state);
 }
 
-export function deviceTypeLabel(identifier: string): string {
-  const parts = identifier.split('.');
-  const last = parts[parts.length - 1] ?? identifier;
-  return last.replace(/-/g, ' ');
-}

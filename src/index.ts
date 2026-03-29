@@ -1,4 +1,5 @@
 import { help } from './commands/help.js';
+import { startInteractive } from './commands/interactive.js';
 import { iosHelp } from './commands/ios/help.js';
 import { androidHelp } from './commands/android/help.js';
 import { iosDeviceList } from './commands/ios/device-list.js';
@@ -10,20 +11,35 @@ import { createAndroid } from './commands/create/android.js';
 import { bashCompletion } from './commands/tools/bash-completion.js';
 import { appRunIos } from './commands/app/run-ios.js';
 import { appRunAndroid } from './commands/app/run-android.js';
+import { status } from './commands/status.js';
+import { iosDeviceStatus } from './commands/ios/device-status.js';
+import { androidDeviceStatus } from './commands/android/device-status.js';
+import { iosDeviceStop } from './commands/ios/device-stop.js';
+import { androidDeviceStop } from './commands/android/device-stop.js';
 
 const args = process.argv.slice(2);
 
 async function main(): Promise<void> {
   const [a0, a1, a2, a3] = args;
 
-  if (args.length === 0 || a0 === '--help' || a0 === '-h') {
+  if (args.length === 0) {
+    return startInteractive();
+  }
+
+  if (a0 === '--help' || a0 === '-h') {
     return help();
+  }
+
+  if (a0 === 'status') {
+    return status();
   }
 
   if (a0 === 'ios') {
     if (!a1) return iosHelp();
     if (a1 === 'device' && a2 === 'list') return iosDeviceList();
     if (a1 === 'device' && a2 === 'start') return iosDeviceStart(a3);
+    if (a1 === 'device' && a2 === 'status') return iosDeviceStatus();
+    if (a1 === 'device' && a2 === 'stop') return iosDeviceStop(a3);
     return iosHelp();
   }
 
@@ -31,6 +47,8 @@ async function main(): Promise<void> {
     if (!a1) return androidHelp();
     if (a1 === 'device' && a2 === 'list') return androidDeviceList();
     if (a1 === 'device' && a2 === 'start') return androidDeviceStart(a3);
+    if (a1 === 'device' && a2 === 'status') return androidDeviceStatus();
+    if (a1 === 'device' && a2 === 'stop') return androidDeviceStop(a3);
     return androidHelp();
   }
 
