@@ -270,8 +270,9 @@ async function runAction(action: () => Promise<void>): Promise<void> {
   try {
     await action();
   } catch (e) {
-    if (e !== '' && e !== undefined) {
-      console.error(c.red(`Error: ${e instanceof Error ? e.message : String(e)}`));
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg !== '' && msg !== 'undefined' && e !== undefined) {
+      console.error(c.red(`Error: ${msg}`));
     }
   }
   console.log();
