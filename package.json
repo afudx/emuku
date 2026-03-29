@@ -11,16 +11,22 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js"
   },
-  "dependencies": {
-    "enquirer": "^2.4.1"
-  },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
   },
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["emulator", "simulator", "ios", "android", "cli"],
-  "license": "MIT"
+  "keywords": [
+    "emulator",
+    "simulator",
+    "ios",
+    "android",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "enquirer": "^2.4.1"
+  }
 }
