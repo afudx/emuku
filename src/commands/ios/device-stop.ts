@@ -4,40 +4,6 @@ import { logger } from '../../utils/logger.js';
 
 const { prompt } = enquirer;
 
-async function selectAndStop(): Promise<boolean> {
-  const running = listDevices().filter(d => d.state === 'Booted');
-  if (running.length === 0) {
-    return false;
-  }
-
-  const choices = running.map(d => ({
-    name: d.udid,
-    message: `${d.name}  ${d.runtime}`,
-    value: d.udid,
-  }));
-
-  const response = await prompt<{ device: string }>({
-    type: 'select',
-    name: 'device',
-    message: `Select a simulator to stop:\n\nEsc to cancel`,
-    choices,
-  });
-
-  const targetUdid = response.device;
-  const targetName = running.find(d => d.udid === targetUdid)?.name ?? targetUdid;
-
-  logger.info(`Stopping ${targetName}...`);
-  const result = stopDevice(targetUdid);
-
-  if (!result.success) {
-    logger.error(`Failed to stop ${targetName}: ${result.error}`);
-  } else {
-    logger.success(`${targetName} stopped.`);
-  }
-
-  return true;
-}
-
 export async function iosDeviceStop(id?: string): Promise<void> {
   if (id) {
     const device = findDevice(id);
@@ -59,11 +25,34 @@ export async function iosDeviceStop(id?: string): Promise<void> {
     return;
   }
 
-  // Interactive mode
-  let keepGoing = true;
-  while (keepGoing) {
-    keepGoing = await selectAndStop();
+  const running = listDevices().filter(d => d.state === 'Booted');
+  if (running.length === 0) {
+    logger.info('No iOS simulators currently running.');
+    return;
   }
 
-  logger.info('All devices have been stopped.');
+  const choices = running.map(d => ({
+    name: d.udid,
+    message: `${d.name}  ${d.runtime}`,
+    value: d.udid,
+  }));
+
+  const response = await prompt<{ device: string }>({
+    type: 'select',
+    name: 'device',
+    message: 'Select a simulator to stop',
+    choices,
+  });
+
+  const targetUdid = response.device;
+  const targetName = running.find(d => d.udid === targetUdid)?.name ?? targetUdid;
+
+  logger.info(`Stopping ${targetName}...`);
+  const result = stopDevice(targetUdid);
+
+  if (!result.success) {
+    logger.error(`Failed to stop ${targetName}: ${result.error}`);
+  } else {
+    logger.success(`${targetName} stopped.`);
+  }
 }

@@ -4,39 +4,6 @@ import { logger } from '../../utils/logger.js';
 
 const { prompt } = enquirer;
 
-async function selectAndStop(): Promise<boolean> {
-  const running = listDevices().filter(d => d.state === 'Running');
-  if (running.length === 0) {
-    return false;
-  }
-
-  const choices = running.map(d => ({
-    name: d.avdName,
-    message: d.avdName,
-    value: d.avdName,
-  }));
-
-  const response = await prompt<{ device: string }>({
-    type: 'select',
-    name: 'device',
-    message: `Select an emulator to stop:\n\nEsc to cancel`,
-    choices,
-  });
-
-  const targetAvd = response.device;
-
-  logger.info(`Stopping ${targetAvd}...`);
-  const result = stopDevice(targetAvd);
-
-  if (!result.success) {
-    logger.error(`Failed to stop ${targetAvd}: ${result.error}`);
-  } else {
-    logger.success(`${targetAvd} stopped.`);
-  }
-
-  return true;
-}
-
 export async function androidDeviceStop(id?: string): Promise<void> {
   if (id) {
     const device = findDevice(id);
@@ -58,11 +25,33 @@ export async function androidDeviceStop(id?: string): Promise<void> {
     return;
   }
 
-  // Interactive mode
-  let keepGoing = true;
-  while (keepGoing) {
-    keepGoing = await selectAndStop();
+  const running = listDevices().filter(d => d.state === 'Running');
+  if (running.length === 0) {
+    logger.info('No Android emulators currently running.');
+    return;
   }
 
-  logger.info('All devices have been stopped.');
+  const choices = running.map(d => ({
+    name: d.avdName,
+    message: d.avdName,
+    value: d.avdName,
+  }));
+
+  const response = await prompt<{ device: string }>({
+    type: 'select',
+    name: 'device',
+    message: 'Select an emulator to stop',
+    choices,
+  });
+
+  const targetAvd = response.device;
+
+  logger.info(`Stopping ${targetAvd}...`);
+  const result = stopDevice(targetAvd);
+
+  if (!result.success) {
+    logger.error(`Failed to stop ${targetAvd}: ${result.error}`);
+  } else {
+    logger.success(`${targetAvd} stopped.`);
+  }
 }
