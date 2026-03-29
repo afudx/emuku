@@ -30,7 +30,7 @@ export async function iosDeviceStart(id?: string): Promise<void> {
   const response = await prompt<{ device: string }>({
     type: 'select',
     name: 'device',
-    message: 'Select a simulator to start:\n\nEsc to cancel',
+    message: 'Select a simulator to start',
     choices,
     initial,
   });

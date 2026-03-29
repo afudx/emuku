@@ -31,7 +31,7 @@ export async function androidDeviceStart(id?: string): Promise<void> {
   const response = await prompt<{ device: string }>({
     type: 'select',
     name: 'device',
-    message: 'Select an emulator to start:\n\nEsc to cancel',
+    message: 'Select an emulator to start',
     choices,
     initial,
   });
