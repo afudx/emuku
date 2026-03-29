@@ -87,6 +87,7 @@ async function selectMenu(
     promptInstance.options.header = getHeader(subtitle);
     promptInstance.separator = () => '';
     promptInstance.styles.highlight = (str: string) => c.cyan(str);
+    promptInstance.styles.em = (str: string) => c.cyan(str);
 
     const response = await promptInstance.run();
     return response;
