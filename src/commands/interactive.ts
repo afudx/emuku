@@ -74,7 +74,7 @@ async function selectMenu(
   cancelAction: string = 'exit',
   subtitle?: string,
 ): Promise<string> {
-  console.clear();
+  process.stdout.write('\x1b[3J\x1b[2J\x1b[H');
   try {
     const SelectPrompt = (enquirer as any).Select;
     const promptInstance = new SelectPrompt({
@@ -271,7 +271,7 @@ async function utilityMenu(): Promise<Nav> {
 }
 
 async function runAction(action: () => Promise<void>): Promise<void> {
-  console.clear();
+  process.stdout.write('\x1b[3J\x1b[2J\x1b[H');
   let cancelled = false;
   try {
     await action();
