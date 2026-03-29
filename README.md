@@ -1,98 +1,81 @@
 # emuku-cli
 
-A command-line tool designed for efficiently managing, starting, stopping, and viewing the status of iOS Simulators and Android Emulators.
+A command-line tool for managing iOS Simulators and Android Emulators. Run it with no arguments for a fullscreen interactive menu, or pass commands directly for scripting.
 
-`emuku` provides a clean, persistent interactive terminal menu with real-time hardware status polling, as well as a traditional argument-based CLI for scripting and quick actions.
+## Tech Stack
 
-## 0. Tech Stack & Dependencies
-
-**Tech Stack**
-- **Language**: TypeScript (Node.js >= 18)
-- **Framework**: Customized manual CLI routing with `enquirer` for interactive menus.
-
-**Dependencies**
-- **`enquirer`**: Powers the dynamic, interactive terminal menus and backgrounds polling.
-- **`ansi-colors`**: Provides rich terminal styling and colors.
+- **TypeScript** (Node.js >= 18)
+- **enquirer** — interactive terminal menus
+- **ansi-colors** — terminal styling
 
 **System Requirements**
+
 - macOS (for iOS Simulators)
-- iOS: `xcrun simctl` (available via Xcode Command Line Tools)
-- Android: Android SDK Command-line Tools (`emulator`, `adb`, `sdkmanager`)
+- Xcode Command Line Tools (`xcrun simctl`)
+- Android SDK Command-line Tools (`emulator`, `adb`, `sdkmanager`)
 
 ---
 
-## 1. Using the CLI with Arguments
+## Interactive Mode
 
-You can use `emuku` by passing direct arguments. This is ideal for scripts, aliases, or quick actions without entering the interactive menu.
-
-```bash
-# List all available simulators/emulators
-emuku ios device list
-emuku android device list
-
-# Start a specific device (by UDID or AVD Name)
-emuku ios device start <udid>
-emuku android device start <avd_name>
-
-# Stop a running device
-emuku ios device stop <udid>
-emuku android device stop <avd_name>
-
-# View currently running devices
-emuku ios device status
-emuku android device status
-
-# Check prerequisites for local machine
-emuku ios setup
-emuku android setup
-```
-
-For a full list of commands, run:
-```bash
-emuku --help
-```
-
----
-
-## 2. Using the Interactive CLI
-
-To launch the persistent, interactive interface, simply run `emuku` with no arguments:
+Run `emuku` with no arguments to launch a fullscreen, non-scrollable interactive menu:
 
 ```bash
 emuku
 ```
 
-### Interactive Features:
-- **Categorized Menus**: Actions are grouped into logical categories: `iOS`, `Android`, `Runtime`, `Setup`, and `Utility` navigation trees.
-- **Real-time Status Header**: The main header dynamically polls your system every 2 seconds to display the exact number of running Android and iOS emulators, updating automatically even while you are sitting completely idle on the menu.
-- **Graceful Navigation**: Press `Esc` or `Ctrl+C` at any time (even deep inside an action prompt) to safely cancel your current action and return to the previous submenu without crashing the application.
+- Fullscreen alternate screen buffer (like vim/htop)
+- Categories: **iOS**, **Android**, **Runtime**, **Setup**, **Utility**
+- Live device status in the header (refreshes on each menu transition)
+- Press `Esc` or `Ctrl+C` anywhere to go back without crashing
 
 ---
 
-## 3. How to Build and Run
-
-To build the TypeScript project and run it locally:
+## Direct CLI Usage
 
 ```bash
-# 1. Install dependencies
-npm install
+# iOS
+emuku ios device list              # List all simulators
+emuku ios device start <udid>      # Start a simulator
+emuku ios device stop <udid>       # Stop a simulator
+emuku ios device status            # Show running iOS devices
 
-# 2. Build the project
-npm run build
+# Android
+emuku android device list          # List all emulators
+emuku android device start <avd>   # Start an emulator
+emuku android device stop <avd>    # Stop an emulator
+emuku android device status        # Show running Android devices
 
-# 3. Run the CLI
-npm start -- [arguments]
-# Or launch interactive mode:
-npm start
+# Runtime
+emuku app run ios [id]             # Run Flutter app on iOS simulator
+emuku app run android [id]         # Run Flutter app on Android emulator
+emuku status                       # Show all running devices
 
-# For development (Watch Mode)
-npm run dev
+# Setup
+emuku create ios                   # Setup iOS prerequisites
+emuku create android               # Setup Android prerequisites
+
+# Utility
+emuku tools bash-completion        # Install shell completions (bash/zsh)
 ```
 
-Alternatively, you can link the binary globally for use anywhere:
+Full help: `emuku --help`
+
+---
+
+## Build & Run
+
 ```bash
 npm install
 npm run build
+npm start                # Interactive mode
+npm start -- <command>   # Direct CLI
+npm run dev              # Watch mode
+```
+
+Global install:
+
+```bash
 npm link
 emuku
 ```
