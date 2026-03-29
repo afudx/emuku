@@ -5,40 +5,47 @@ import { logger } from '../../utils/logger.js';
 const { prompt } = enquirer;
 
 export async function androidDeviceStart(id?: string): Promise<void> {
-  let targetAvd: string;
+  const devices = listDevices();
+  if (devices.length === 0) {
+    logger.info('no device currently available');
+    return;
+  }
 
+  const stopped = devices.filter(d => d.state === 'Stopped');
+  const choices = (stopped.length > 0 ? stopped : devices).map(d => ({
+    name: d.avdName,
+    message: `${d.avdName}  [${d.state}]`,
+    value: d.avdName,
+  }));
+
+  let initial: string | undefined;
   if (id) {
     const device = findDevice(id);
-    if (!device) {
-      logger.error(`AVD not found: ${id}`);
-      logger.info('Run: emuku android device list  — to see available emulators');
-      return;
+    if (device) {
+      initial = device.avdName;
+    } else {
+      logger.warn(`AVD not found for "${id}". Please select from the list.`);
     }
-    targetAvd = device.avdName;
-  } else {
-    const devices = listDevices();
-    if (devices.length === 0) {
-      logger.warn('No Android emulators found.');
-      logger.info('Run: emuku create android  — to set up Android emulator prerequisites');
-      return;
-    }
+  }
 
-    const stopped = devices.filter(d => d.state === 'Stopped');
-    const choices = (stopped.length > 0 ? stopped : devices).map(d => ({
-      name: d.avdName,
-      message: `${d.avdName}  [${d.state}]`,
-      value: d.avdName,
-    }));
-
-    const response = await prompt<{ device: string }>({
+  let response: { device: string };
+  try {
+    response = await prompt<{ device: string }>({
       type: 'select',
       name: 'device',
-      message: 'Select an emulator to start:',
+      message: 'Select an emulator to start:\n\nEsc to cancel',
       choices,
+      initial,
     });
-
-    targetAvd = response.device;
+  } catch (e) {
+    if (e === '') {
+      logger.info('Cancelled');
+      return;
+    }
+    throw e;
   }
+
+  const targetAvd = response.device;
 
   logger.info(`Starting ${targetAvd}...`);
   const result = startDevice(targetAvd);
