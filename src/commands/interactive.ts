@@ -278,4 +278,20 @@ async function runAction(action: () => Promise<void>): Promise<void> {
       console.error(c.red(`${PAD}Error: ${msg}`));
     }
   }
+  console.log();
+  console.log(c.dim(`${PAD}Press any key to continue...`));
+  await waitForKey();
+}
+
+function waitForKey(): Promise<void> {
+  return new Promise(resolve => {
+    const stdin = process.stdin;
+    const wasRaw = stdin.isRaw;
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.once('data', () => {
+      stdin.setRawMode(wasRaw);
+      resolve();
+    });
+  });
 }
