@@ -82,11 +82,11 @@ async function selectMenu(
       message: ' ',
       choices: choices as Array<{ name: string; message: string }>,
       prefix: PAD,
-      styles: { primary: c.white },
     });
 
     promptInstance.options.header = getHeader(subtitle);
     promptInstance.separator = () => '';
+    promptInstance.styles.highlight = (str: string) => c.cyan(str);
 
     const response = await promptInstance.run();
     return response;
