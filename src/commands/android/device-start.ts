@@ -28,22 +28,13 @@ export async function androidDeviceStart(id?: string): Promise<void> {
     }
   }
 
-  let response: { device: string };
-  try {
-    response = await prompt<{ device: string }>({
-      type: 'select',
-      name: 'device',
-      message: 'Select an emulator to start:\n\nEsc to cancel',
-      choices,
-      initial,
-    });
-  } catch (e) {
-    if (e === '') {
-      logger.info('Cancelled');
-      return;
-    }
-    throw e;
-  }
+  const response = await prompt<{ device: string }>({
+    type: 'select',
+    name: 'device',
+    message: 'Select an emulator to start:\n\nEsc to cancel',
+    choices,
+    initial,
+  });
 
   const targetAvd = response.device;
 
