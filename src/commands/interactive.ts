@@ -85,6 +85,7 @@ async function selectMenu(
     });
 
     promptInstance.options.header = getHeader(subtitle);
+    promptInstance.separator = () => '';
 
     const response = await promptInstance.run();
     return response;
