@@ -19,6 +19,8 @@ import { listDevices as listIosDevices } from '../lib/ios/simulator.js';
 import { listDevices as listAndroidDevices } from '../lib/android/emulator.js';
 const { prompt } = enquirer;
 
+const PAD = '    ';
+
 type Nav = 'back' | 'home' | 'exit';
 
 let sepId = 0;
@@ -26,53 +28,59 @@ function SEP() {
   return { role: 'heading', name: `__sep_${sepId++}`, message: ' ' };
 }
 
-function item(name: string, icon: string, label: string, desc: string) {
-  return { name, message: `${icon}  ${label.padEnd(22)} ${c.dim(desc)}` };
+function item(name: string, icon: string, label: string) {
+  return { name, message: `${icon}  ${label}` };
 }
 
 function navItems() {
   return [
     SEP(),
     SEP(),
-    { name: 'back', message: '←   Back' },
-    { name: 'home', message: '⌂   Home' },
-    { name: 'exit', message: '✕   Exit' },
+    { name: 'back', message: '←  Back' },
+    { name: 'home', message: '⌂  Home' },
+    { name: 'exit', message: '✕  Exit' },
   ] as const;
 }
 
-const ASCII_TITLE = `
-  ███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗
-  ██╔════╝████╗ ████║██║   ██║██║ ██╔╝██║   ██║
-  █████╗  ██╔████╔██║██║   ██║█████╔╝ ██║   ██║
-  ██╔══╝  ██║╚██╔╝██║██║   ██║██╔═██╗ ██║   ██║
-  ███████╗██║ ╚═╝ ██║╚██████╔╝██║  ██╗╚██████╔╝
-  ╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝
-`;
+const ASCII_TITLE = [
+  '███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗',
+  '██╔════╝████╗ ████║██║   ██║██║ ██╔╝██║   ██║',
+  '█████╗  ██╔████╔██║██║   ██║█████╔╝ ██║   ██║',
+  '██╔══╝  ██║╚██╔╝██║██║   ██║██╔═██╗ ██║   ██║',
+  '███████╗██║ ╚═╝ ██║╚██████╔╝██║  ██╗╚██████╔╝',
+  '╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝',
+].map(l => PAD + l).join('\n');
 
 function getHeader(subtitle?: string): string {
   const iosBooted = listIosDevices().filter(d => d.state === 'Booted').length;
   const androidRunning = listAndroidDevices().filter(d => d.state === 'Running').length;
   const total = iosBooted + androidRunning;
 
-  let hdr = c.cyan(ASCII_TITLE) + '\n';
-  hdr += c.dim(`  cwd: ${process.cwd()}`) + '\n';
-  hdr += c.dim(`  status: ${total} devices running, ${androidRunning} Android, ${iosBooted} iOS`) + '\n\n';
+  let hdr = '\n' + c.cyan(ASCII_TITLE) + '\n\n';
+  hdr += c.dim(`${PAD}${process.cwd()}`) + '\n';
+  hdr += c.dim(`${PAD}${total} devices running, ${androidRunning} android, ${iosBooted} iOS`) + '\n';
 
   if (subtitle) {
-    hdr += c.bold.cyan(`  ${subtitle}`) + '\n\n';
+    hdr += '\n' + c.bold.cyan(`${PAD}${subtitle}`) + '\n';
   }
 
   return hdr;
 }
 
-async function selectMenu(message: string, choices: ReadonlyArray<{ name: string; message: string } | { role: string; message: string } | { name: string; message: string; disabled: boolean }>, cancelAction: string = 'exit', subtitle?: string): Promise<string> {
+async function selectMenu(
+  choices: ReadonlyArray<{ name: string; message: string } | { role: string; message: string }>,
+  cancelAction: string = 'exit',
+  subtitle?: string,
+): Promise<string> {
+  console.clear();
   let poller: NodeJS.Timeout | null = null;
   try {
     const SelectPrompt = (enquirer as any).Select;
     const promptInstance = new SelectPrompt({
       name: 'action',
-      message,
+      message: ' ',
       choices: choices as Array<{ name: string; message: string }>,
+      prefix: PAD,
     });
 
     promptInstance.options.header = getHeader(subtitle);
@@ -100,22 +108,20 @@ export async function startInteractive(): Promise<void> {
     return help();
   }
 
-  console.clear();
   while (true) {
-    const choice = await selectMenu('Select a category', [
-      item('ios',     '○', 'iOS',       'Manage iOS simulators'),
-      item('android', '△', 'Android',   'Manage Android emulators'),
-      item('runtime', '◇', 'Runtime',   'Run Flutter apps & status'),
-      item('setup',   '⚙', 'Setup',     'Prerequisites & installation'),
-      item('utility', '⊞', 'Utility',   'Tools & shell completions'),
+    const choice = await selectMenu([
+      item('ios',     '○', 'iOS'),
+      item('android', '△', 'Android'),
+      item('runtime', '◇', 'Runtime'),
+      item('setup',   '⚙', 'Setup'),
+      item('utility', '⊞', 'Utility'),
       SEP(),
       SEP(),
-      { name: 'exit', message: '✕   Exit' },
+      { name: 'exit', message: '✕  Exit' },
     ]);
 
     if (choice === 'exit') {
-      console.log();
-      console.log(c.dim('Bye 👋'));
+      console.clear();
       return;
     }
 
@@ -131,8 +137,7 @@ export async function startInteractive(): Promise<void> {
     if (handler) {
       const nav = await handler();
       if (nav === 'exit') {
-        console.log();
-        console.log(c.dim('Bye 👋'));
+        console.clear();
         return;
       }
     }
@@ -141,11 +146,11 @@ export async function startInteractive(): Promise<void> {
 
 async function iosMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu('Select an action', [
-      item('device-list',   '≡', 'Device List',   'List all simulators'),
-      item('device-start',  '▶', 'Device Start',  'Boot a simulator'),
-      item('device-stop',   '■', 'Device Stop',   'Shutdown a simulator'),
-      item('device-status', '◉', 'Device Status',  'Show running simulators'),
+    const choice = await selectMenu([
+      item('device-list',   '≡', 'Device List'),
+      item('device-start',  '▶', 'Device Start'),
+      item('device-stop',   '■', 'Device Stop'),
+      item('device-status', '◉', 'Device Status'),
       ...navItems(),
     ], 'back', '○  iOS');
 
@@ -168,11 +173,11 @@ async function iosMenu(): Promise<Nav> {
 
 async function androidMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu('Select an action', [
-      item('device-list',   '≡', 'Device List',   'List all emulators'),
-      item('device-start',  '▶', 'Device Start',  'Boot an emulator'),
-      item('device-stop',   '■', 'Device Stop',   'Shutdown an emulator'),
-      item('device-status', '◉', 'Device Status',  'Show running emulators'),
+    const choice = await selectMenu([
+      item('device-list',   '≡', 'Device List'),
+      item('device-start',  '▶', 'Device Start'),
+      item('device-stop',   '■', 'Device Stop'),
+      item('device-status', '◉', 'Device Status'),
       ...navItems(),
     ], 'back', '△  Android');
 
@@ -195,10 +200,10 @@ async function androidMenu(): Promise<Nav> {
 
 async function runtimeMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu('Select an action', [
-      item('run-ios',     '▶', 'Run iOS',      'Run Flutter on iOS simulator'),
-      item('run-android', '▶', 'Run Android',  'Run Flutter on Android emulator'),
-      item('status',      '◉', 'Status',       'Show all running devices'),
+    const choice = await selectMenu([
+      item('run-ios',     '▶', 'Run iOS'),
+      item('run-android', '▶', 'Run Android'),
+      item('status',      '◉', 'Status'),
       ...navItems(),
     ], 'back', '◇  Runtime');
 
@@ -220,9 +225,9 @@ async function runtimeMenu(): Promise<Nav> {
 
 async function setupMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu('Select an action', [
-      item('setup-ios',     '↧', 'Setup iOS',     'Check & install iOS prerequisites'),
-      item('setup-android', '↧', 'Setup Android', 'Check & install Android prerequisites'),
+    const choice = await selectMenu([
+      item('setup-ios',     '↧', 'Setup iOS'),
+      item('setup-android', '↧', 'Setup Android'),
       ...navItems(),
     ], 'back', '⚙  Setup');
 
@@ -243,8 +248,8 @@ async function setupMenu(): Promise<Nav> {
 
 async function utilityMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu('Select an action', [
-      item('bash-completion', '↳', 'Bash Completion', 'Install shell completions'),
+    const choice = await selectMenu([
+      item('bash-completion', '↳', 'Bash Completion'),
       ...navItems(),
     ], 'back', '⊞  Utility');
 
@@ -263,13 +268,14 @@ async function utilityMenu(): Promise<Nav> {
 }
 
 async function runAction(action: () => Promise<void>): Promise<void> {
+  console.clear();
   console.log();
   try {
     await action();
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg !== '' && msg !== 'undefined' && e !== undefined) {
-      console.error(c.red(`Error: ${msg}`));
+      console.error(c.red(`${PAD}Error: ${msg}`));
     }
   }
   console.log();
