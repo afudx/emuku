@@ -17,7 +17,6 @@ import { createAndroid } from './create/android.js';
 import { bashCompletion } from './tools/bash-completion.js';
 import { listDevices as listIosDevices } from '../lib/ios/simulator.js';
 import { listDevices as listAndroidDevices } from '../lib/android/emulator.js';
-const { prompt } = enquirer;
 
 const PAD = '    ';
 
@@ -42,22 +41,25 @@ function navItems() {
   ] as const;
 }
 
-const ASCII_TITLE = [
-  '███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗',
-  '██╔════╝████╗ ████║██║   ██║██║ ██╔╝██║   ██║',
-  '█████╗  ██╔████╔██║██║   ██║█████╔╝ ██║   ██║',
-  '██╔══╝  ██║╚██╔╝██║██║   ██║██╔═██╗ ██║   ██║',
-  '███████╗██║ ╚═╝ ██║╚██████╔╝██║  ██╗╚██████╔╝',
-  '╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝',
-].map(l => PAD + l).join('\n');
+const STATIC_HEADER = (() => {
+  const title = [
+    '███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗',
+    '██╔════╝████╗ ████║██║   ██║██║ ██╔╝██║   ██║',
+    '█████╗  ██╔████╔██║██║   ██║█████╔╝ ██║   ██║',
+    '██╔══╝  ██║╚██╔╝██║██║   ██║██╔═██╗ ██║   ██║',
+    '███████╗██║ ╚═╝ ██║╚██████╔╝██║  ██╗╚██████╔╝',
+    '╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝',
+  ].map(l => PAD + l).join('\n');
+
+  return '\n' + c.cyan(title) + '\n\n' + c.dim(`${PAD}${process.cwd()}`);
+})();
 
 function getHeader(subtitle?: string): string {
   const iosBooted = listIosDevices().filter(d => d.state === 'Booted').length;
   const androidRunning = listAndroidDevices().filter(d => d.state === 'Running').length;
   const total = iosBooted + androidRunning;
 
-  let hdr = '\n' + c.cyan(ASCII_TITLE) + '\n\n';
-  hdr += c.dim(`${PAD}${process.cwd()}`) + '\n';
+  let hdr = STATIC_HEADER + '\n';
   hdr += c.dim(`${PAD}${total} devices running, ${androidRunning} android, ${iosBooted} iOS`) + '\n';
 
   if (subtitle) {
@@ -73,7 +75,6 @@ async function selectMenu(
   subtitle?: string,
 ): Promise<string> {
   console.clear();
-  let poller: NodeJS.Timeout | null = null;
   try {
     const SelectPrompt = (enquirer as any).Select;
     const promptInstance = new SelectPrompt({
@@ -85,23 +86,16 @@ async function selectMenu(
 
     promptInstance.options.header = getHeader(subtitle);
 
-    poller = setInterval(() => {
-      promptInstance.options.header = getHeader(subtitle);
-      if (promptInstance.state.status === 'pending') {
-        promptInstance.render();
-      }
-    }, 2000);
-    poller.unref();
-
     const response = await promptInstance.run();
-    if (poller) clearInterval(poller);
     return response;
   } catch {
-    if (poller) clearInterval(poller);
     return cancelAction;
   }
 }
 
+function exitAltScreen(): void {
+  process.stdout.write('\x1b[?1049l');
+}
 
 export async function startInteractive(): Promise<void> {
   if (!process.stdin.isTTY) {
@@ -124,7 +118,7 @@ export async function startInteractive(): Promise<void> {
       ]);
 
       if (choice === 'exit') {
-        process.stdout.write('\x1b[?1049l');
+        exitAltScreen();
         return;
       }
 
@@ -140,13 +134,13 @@ export async function startInteractive(): Promise<void> {
       if (handler) {
         const nav = await handler();
         if (nav === 'exit') {
-          process.stdout.write('\x1b[?1049l');
+          exitAltScreen();
           return;
         }
       }
     }
   } catch {
-    process.stdout.write('\x1b[?1049l');
+    exitAltScreen();
   }
 }
 
@@ -275,7 +269,6 @@ async function utilityMenu(): Promise<Nav> {
 
 async function runAction(action: () => Promise<void>): Promise<void> {
   console.clear();
-  console.log();
   try {
     await action();
   } catch (e) {
@@ -283,20 +276,5 @@ async function runAction(action: () => Promise<void>): Promise<void> {
     if (msg !== '' && msg !== 'undefined' && e !== undefined) {
       console.error(c.red(`${PAD}Error: ${msg}`));
     }
-  }
-  console.log();
-  await pause();
-}
-
-async function pause(): Promise<void> {
-  try {
-    await prompt<{ continue: boolean }>({
-      type: 'confirm',
-      name: 'continue',
-      message: 'Press Enter to continue...',
-      initial: true,
-    });
-  } catch {
-    // Ignore Esc/Ctrl+C
   }
 }
