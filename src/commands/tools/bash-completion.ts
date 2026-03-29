@@ -8,8 +8,8 @@ const { prompt } = enquirer;
 
 function getCompletionScript(shell: 'bash' | 'zsh'): string {
   const candidates = [
-    join(__dirname, '..', 'completions', `${shell}.sh`),
-    join(__dirname, '..', '..', 'src', 'completions', `${shell}.sh`),
+    join(__dirname, '..', '..', 'completions', `${shell}.sh`), // When running from src
+    join(__dirname, '..', '..', '..', 'src', 'completions', `${shell}.sh`), // When running from dist
   ];
   for (const p of candidates) {
     if (existsSync(p)) return readFileSync(p, 'utf8');
