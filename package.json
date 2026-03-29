@@ -1,0 +1,26 @@
+{
+  "name": "emuku",
+  "version": "0.1.0",
+  "description": "CLI tool to control iOS simulators and Android emulators",
+  "bin": {
+    "emuku": "./bin/emuku"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "enquirer": "^2.4.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["emulator", "simulator", "ios", "android", "cli"],
+  "license": "MIT"
+}
