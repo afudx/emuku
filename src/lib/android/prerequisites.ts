@@ -75,7 +75,7 @@ export function checkPrerequisites(): PrerequisiteCheck[] {
   let systemImageInstalled = false;
   let systemImageVersion: string | undefined;
   if (sdkmanagerPath) {
-    const listResult = exec(`"${sdkmanagerPath}" --list_installed`);
+    const listResult = exec(`"${sdkmanagerPath}" --list --installed`);
     if (listResult.exitCode === 0 && listResult.stdout.includes('system-images')) {
       systemImageInstalled = true;
       const match = listResult.stdout.match(/system-images;([^\s|]+)/);

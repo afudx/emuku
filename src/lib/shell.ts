@@ -32,7 +32,7 @@ export function resolveAndroidTool(tool: 'emulator' | 'adb' | 'sdkmanager'): str
     adb: join('platform-tools', 'adb'),
     sdkmanager: join('cmdline-tools', 'latest', 'bin', 'sdkmanager'),
   };
-  const subpath = subpaths[tool];
+  const subpath = subpaths[tool]!;
 
   const sdkRoots = [
     process.env['ANDROID_HOME'],
