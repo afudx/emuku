@@ -173,9 +173,10 @@ export async function selectMenu(
     const origRenderChoices = promptInstance.renderChoices.bind(promptInstance);
     promptInstance.renderChoices = async function () {
       const rendered: string = await origRenderChoices();
+      if (this.state.submitted) return rendered;
+
       const leftLines = rendered.split('\n');
       finalLeftLines = leftLines;
-      if (this.state.submitted) return rendered;
 
       const focusedChoice = this.choices?.[this.index];
       const focusedName = focusedChoice?.name || '';
