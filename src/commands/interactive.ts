@@ -18,9 +18,13 @@ import { bashCompletion } from './tools/bash-completion.js';
 import { listDevices as listIosDevices } from '../lib/ios/simulator.js';
 import { listDevices as listAndroidDevices } from '../lib/android/emulator.js';
 
-const PAD = '    ';
+const PAD = '  ';
+const accent = (c as any).hex('#f97316') as c.StyleFunction;
+const accentBold = ((c as any).bold.hex('#f97316')) as c.StyleFunction;
 
 type Nav = 'back' | 'home' | 'exit';
+
+const CATEGORIES = ['iOS', 'Android', 'Runtime', 'Setup', 'Utility'] as const;
 
 let sepId = 0;
 function SEP() {
@@ -28,51 +32,108 @@ function SEP() {
 }
 
 function item(name: string, icon: string, label: string) {
-  return { name, message: `${icon}  ${label}` };
+  return { name, message: `${accent(icon)}  ${label}` };
 }
 
 function navItems() {
   return [
     SEP(),
-    SEP(),
-    { name: 'back', message: '←  Back' },
-    { name: 'home', message: '⌂  Home' },
-    { name: 'exit', message: '✕  Exit' },
+    { name: 'back', message: `${accent('←')}  Back` },
+    { name: 'home', message: `${accent('⌂')}  Home` },
+    { name: 'exit', message: `${accent('✕')}  Exit` },
   ] as const;
 }
 
-const STATIC_HEADER = (() => {
-  const title = [
-    '███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗',
-    '██╔════╝████╗ ████║██║   ██║██║ ██╔╝██║   ██║',
-    '█████╗  ██╔████╔██║██║   ██║█████╔╝ ██║   ██║',
-    '██╔══╝  ██║╚██╔╝██║██║   ██║██╔═██╗ ██║   ██║',
-    '███████╗██║ ╚═╝ ██║╚██████╔╝██║  ██╗╚██████╔╝',
-    '╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝',
-  ].map(l => PAD + l).join('\n');
+function cols(): number {
+  return process.stdout.columns || 80;
+}
 
-  return '\n' + c.cyan(title) + '\n\n' + c.dim(`${PAD}${process.cwd()}`);
-})();
+function boxWidth(): number {
+  return Math.min(cols() - 4, 70);
+}
 
-function getHeader(subtitle?: string): string {
+const ASCII_TITLE = [
+  '███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗',
+  '██╔════╝████╗ ████║██║   ██║██║ ██╔╝██║   ██║',
+  '█████╗  ██╔████╔██║██║   ██║█████╔╝ ██║   ██║',
+  '██╔══╝  ██║╚██╔╝██║██║   ██║██╔═██╗ ██║   ██║',
+  '███████╗██║ ╚═╝ ██║╚██████╔╝██║  ██╗╚██████╔╝',
+  '╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝',
+];
+
+function renderTitle(): string {
+  return ASCII_TITLE.map(l => PAD + accent(l)).join('\n');
+}
+
+function renderTabs(active?: string): string {
+  const tabs = CATEGORIES.map(cat => {
+    if (active && cat === active) {
+      return `${c.dim('[')} ${(c as any).bgHex('#f97316').hex('#20262b').bold(` ${cat} `)} ${c.dim(']')}`;
+    }
+    return `${c.dim('[')} ${c.white(cat)} ${c.dim(']')}`;
+  });
+  return PAD + tabs.join('  ');
+}
+
+function boxTop(title: string): string {
+  const w = boxWidth();
+  const titleStr = ` ${title} `;
+  const lineLen = w - 2 - titleStr.length;
+  const line = '─'.repeat(Math.max(lineLen, 2));
+  return PAD + accent('┌─') + accentBold(titleStr) + accent(line + '┐');
+}
+
+function boxBottom(): string {
+  const w = boxWidth();
+  return PAD + accent('└' + '─'.repeat(w - 2) + '┘');
+}
+
+function boxRow(content: string): string {
+  return PAD + accent('│') + ' ' + content;
+}
+
+function renderStatusFooter(): string {
   const iosBooted = listIosDevices().filter(d => d.state === 'Booted').length;
   const androidRunning = listAndroidDevices().filter(d => d.state === 'Running').length;
   const total = iosBooted + androidRunning;
 
-  let hdr = STATIC_HEADER + '\n';
-  hdr += c.dim(`${PAD}${total} devices running, ${androidRunning} android, ${iosBooted} iOS`) + '\n';
+  const lines = [
+    boxTop('Device Status'),
+    boxRow(`${total} devices running, ${androidRunning} android, ${iosBooted} iOS`),
+    boxRow(c.dim(process.cwd())),
+    boxBottom(),
+  ];
+  return lines.join('\n');
+}
 
-  if (subtitle) {
-    hdr += '\n' + c.bold.cyan(`${PAD}${subtitle}`) + '\n';
-  }
+function getHeader(activeTab?: string, panelTitle?: string): string {
+  const parts = [
+    '',
+    renderTitle(),
+    '',
+    renderTabs(activeTab),
+    '',
+    boxTop(panelTitle || 'Menu'),
+    boxRow(''),
+  ];
+  return parts.join('\n');
+}
 
-  return hdr;
+function getFooter(): string {
+  const parts = [
+    boxRow(''),
+    boxBottom(),
+    '',
+    renderStatusFooter(),
+  ];
+  return parts.join('\n');
 }
 
 async function selectMenu(
   choices: ReadonlyArray<{ name: string; message: string } | { role: string; message: string }>,
   cancelAction: string = 'exit',
-  subtitle?: string,
+  activeTab?: string,
+  panelTitle?: string,
 ): Promise<string> {
   process.stdout.write('\x1b[3J\x1b[2J\x1b[H');
   try {
@@ -82,13 +143,14 @@ async function selectMenu(
       message: ' ',
       choices: choices as Array<{ name: string; message: string }>,
       prefix: PAD,
-      margin: [0, 0, 0, PAD.length + 1],
+      margin: [0, 0, 0, PAD.length + 3],
     });
 
-    promptInstance.options.header = getHeader(subtitle);
+    promptInstance.options.header = getHeader(activeTab, panelTitle);
+    promptInstance.options.footer = () => getFooter();
     promptInstance.separator = () => '';
-    promptInstance.styles.highlight = (str: string) => c.cyan(str);
-    promptInstance.styles.em = (str: string) => c.cyan(str);
+    promptInstance.styles.highlight = (str: string) => accent(str);
+    promptInstance.styles.em = (str: string) => accent(str);
 
     const response = await promptInstance.run();
     return response;
@@ -117,9 +179,8 @@ export async function startInteractive(): Promise<void> {
         item('setup',   '⚙', 'Setup'),
         item('utility', '⊞', 'Utility'),
         SEP(),
-        SEP(),
-        { name: 'exit', message: '✕  Exit' },
-      ]);
+        { name: 'exit', message: `${accent('✕')}  Exit` },
+      ], 'exit', undefined, 'Main Menu');
 
       if (choice === 'exit') {
         exitAltScreen();
@@ -156,7 +217,7 @@ async function iosMenu(): Promise<Nav> {
       item('device-stop',   '■', 'Device Stop'),
       item('device-status', '◉', 'Device Status'),
       ...navItems(),
-    ], 'back', '○  iOS');
+    ], 'back', 'iOS', 'iOS Management');
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -183,7 +244,7 @@ async function androidMenu(): Promise<Nav> {
       item('device-stop',   '■', 'Device Stop'),
       item('device-status', '◉', 'Device Status'),
       ...navItems(),
-    ], 'back', '△  Android');
+    ], 'back', 'Android', 'Android Management');
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -205,11 +266,11 @@ async function androidMenu(): Promise<Nav> {
 async function runtimeMenu(): Promise<Nav> {
   while (true) {
     const choice = await selectMenu([
-      { name: 'run-ios',     message: `▶  Run in iOS Simulator       ${c.dim('run flutter app in cwd in iOS')}` },
-      { name: 'run-android', message: `▶  Run in Android Emulator    ${c.dim('run flutter app in cwd in Android')}` },
+      { name: 'run-ios',     message: `${accent('▶')}  Run in iOS Simulator       ${c.dim('run flutter app in cwd in iOS')}` },
+      { name: 'run-android', message: `${accent('▶')}  Run in Android Emulator    ${c.dim('run flutter app in cwd in Android')}` },
       item('status',      '◉', 'Status'),
       ...navItems(),
-    ], 'back', '◇  Runtime');
+    ], 'back', 'Runtime', 'Runtime Management');
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -233,7 +294,7 @@ async function setupMenu(): Promise<Nav> {
       item('setup-ios',     '↧', 'Setup iOS'),
       item('setup-android', '↧', 'Setup Android'),
       ...navItems(),
-    ], 'back', '⚙  Setup');
+    ], 'back', 'Setup', 'Setup');
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -255,7 +316,7 @@ async function utilityMenu(): Promise<Nav> {
     const choice = await selectMenu([
       item('bash-completion', '↳', 'Bash Completion'),
       ...navItems(),
-    ], 'back', '⊞  Utility');
+    ], 'back', 'Utility', 'Utility');
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
