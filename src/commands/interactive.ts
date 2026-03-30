@@ -460,17 +460,26 @@ async function runtimeMenu(): Promise<Nav> {
     ], 'back', {
       activeTab: 'Runtime',
       leftTitle: 'Runtime Management',
-      rightTitle: 'Device Status',
-      rightContentFn: () => buildDeviceStatusLines(),
+      rightTitle: (focused) => focused === 'status' ? 'Runtime Status' : 'Device Status',
+      rightContentFn: async (focused) => {
+        if (focused === 'status') {
+          const res = await status();
+          return res || [];
+        }
+        return buildDeviceStatusLines();
+      },
     });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
 
+    if (choice === 'status') {
+      continue;
+    }
+
     const actions: Record<string, () => Promise<void>> = {
       'run-ios': () => appRunIos(),
       'run-android': () => appRunAndroid(),
-      'status': status,
     };
 
     const action = actions[choice];

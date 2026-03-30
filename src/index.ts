@@ -31,7 +31,9 @@ async function main(): Promise<void> {
   }
 
   if (a0 === 'status') {
-    return status();
+    const res = await status();
+    if (res) res.forEach(l => console.log(l));
+    return;
   }
 
   if (a0 === 'ios') {
