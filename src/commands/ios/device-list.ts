@@ -1,14 +1,15 @@
 import { listDevices } from '../../lib/ios/simulator.js';
-import { table, statusBadge } from '../../utils/display.js';
-import { logger } from '../../utils/logger.js';
+import { tableLines, statusBadge } from '../../utils/display.js';
+import c from 'ansi-colors';
 
-export async function iosDeviceList(): Promise<void> {
+export async function iosDeviceList(): Promise<string[] | void> {
   const devices = listDevices();
 
   if (devices.length === 0) {
-    logger.warn('No iOS simulators found.');
-    logger.info('Run: emuku create ios  — to set up iOS simulator prerequisites');
-    return;
+    return [
+      c.yellow('⚠ No iOS simulators found.'),
+      c.cyan('ℹ Run: emuku create ios  — to set up iOS simulator prerequisites')
+    ];
   }
 
   const byRuntime = new Map<string, typeof devices>();
@@ -19,17 +20,19 @@ export async function iosDeviceList(): Promise<void> {
   }
 
   const runtimes = [...byRuntime.keys()].sort((a, b) => b.localeCompare(a));
+  const lines: string[] = [];
 
   for (const runtime of runtimes) {
-    console.log();
-    console.log(`  ${runtime}`);
+    lines.push('');
+    lines.push(`  ${c.bold(runtime)}`);
     const rows = byRuntime.get(runtime)!.map(d => [
       d.name,
       d.udid,
       statusBadge(d.state),
     ]);
-    table(['Name', 'UDID', 'State'], rows);
+    lines.push(...tableLines(['Name', 'UDID', 'State'], rows));
   }
 
-  console.log();
+  lines.push('');
+  return lines;
 }

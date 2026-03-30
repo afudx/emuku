@@ -1,16 +1,18 @@
 import { listDevices } from '../../lib/android/emulator.js';
 import { logger } from '../../utils/logger.js';
 
-export async function androidDeviceStatus(): Promise<void> {
+import c from 'ansi-colors';
+
+export async function androidDeviceStatus(): Promise<string[] | void> {
   const runningAndroid = listDevices().filter(d => d.state === 'Running');
 
   if (runningAndroid.length === 0) {
-    logger.info('No Android device currently running');
-    return;
+    return [c.cyan('ℹ No Android device currently running')];
   }
 
-  logger.info('Running Android Devices:');
+  const lines: string[] = [c.cyan('ℹ Running Android Devices:')];
   runningAndroid.forEach(d => {
-    logger.info(`  - ${d.avdName}`);
+    lines.push(`  - ${d.avdName}`);
   });
+  return lines;
 }

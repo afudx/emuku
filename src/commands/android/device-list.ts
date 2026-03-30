@@ -1,22 +1,24 @@
 import { listDevices } from '../../lib/android/emulator.js';
-import { table, statusBadge } from '../../utils/display.js';
-import { logger } from '../../utils/logger.js';
+import { tableLines, statusBadge } from '../../utils/display.js';
+import c from 'ansi-colors';
 
-export async function androidDeviceList(): Promise<void> {
+export async function androidDeviceList(): Promise<string[] | void> {
   const devices = listDevices();
 
   if (devices.length === 0) {
-    logger.warn('No Android emulators found.');
-    logger.info('Run: emuku create android  — to set up Android emulator prerequisites');
-    return;
+    return [
+      c.yellow('⚠ No Android emulators found.'),
+      c.cyan('ℹ Run: emuku create android  — to set up Android emulator prerequisites')
+    ];
   }
 
-  console.log();
+  const lines: string[] = [''];
   const rows = devices.map(d => [
     d.avdName,
     statusBadge(d.state),
     d.port ? String(d.port) : '—',
   ]);
-  table(['AVD Name', 'State', 'Port'], rows);
-  console.log();
+  lines.push(...tableLines(['AVD Name', 'State', 'Port'], rows));
+  lines.push('');
+  return lines;
 }

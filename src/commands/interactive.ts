@@ -144,8 +144,8 @@ function buildDeviceStatusLines(): string[] {
 interface PanelConfig {
   activeTab?: string;
   leftTitle: string;
-  rightTitle: string;
-  rightContentFn: (focusedName?: string) => string[];
+  rightTitle: string | ((focusedName?: string) => string);
+  rightContentFn: (focusedName?: string) => Promise<string[]> | string[];
 }
 
 async function selectMenu(
@@ -178,30 +178,38 @@ async function selectMenu(
       const focusedChoice = this.choices?.[this.index];
       const focusedName = focusedChoice?.name || '';
 
-      const rightContent = panel.rightContentFn(focusedName);
-      const rightPanel = buildRightPanel(panel.rightTitle, rightContent, leftLines.length);
+      const rightTitle = typeof panel.rightTitle === 'function' ? panel.rightTitle(focusedName) : (panel.rightTitle || '');
+      const rightContent = await panel.rightContentFn(focusedName);
+      
+      const totalHeight = Math.max(leftLines.length, rightContent.length);
+      const rightPanel = buildRightPanel(rightTitle, rightContent, totalHeight);
 
-      const combined = leftLines.map((line: string, i: number) => {
-        const paddedLeft = padEnd(line, lw);
+      const combined = [];
+      const renderCount = Math.max(leftLines.length, rightPanel.length - 2);
+      for (let i = 0; i < renderCount; i++) {
+        const leftLine = i < leftLines.length ? leftLines[i] : '';
+        const paddedLeft = padEnd(leftLine, lw);
         const rightLine = i < rightPanel.length - 2 ? rightPanel[i + 1] : boxEmptyLine(rightWidth());
-        return paddedLeft + ' ' + rightLine;
-      });
+        combined.push(paddedLeft + ' ' + rightLine);
+      }
 
       return combined.join('\n');
     };
 
+    const initialRightTitle = typeof panel.rightTitle === 'function' ? panel.rightTitle() : (panel.rightTitle || '');
     const headerParts = [
       '',
       renderTitle(),
       '',
       renderTabs(panel.activeTab),
       '',
-      PAD + boxTopLine(panel.leftTitle, lw) + ' ' + buildRightPanel(panel.rightTitle, panel.rightContentFn(), 0)[0],
+      PAD + boxTopLine(panel.leftTitle, lw) + ' ' + buildRightPanel(initialRightTitle, [], 0)[0],
     ];
     promptInstance.options.header = headerParts.join('\n');
 
     promptInstance.options.footer = () => {
-      const rp = buildRightPanel(panel.rightTitle, [], 0);
+      const title = typeof panel.rightTitle === 'function' ? panel.rightTitle() : (panel.rightTitle || '');
+      const rp = buildRightPanel(title, [], 0);
       return '\n' + PAD + boxBottomLine(lw) + ' ' + rp[rp.length - 1];
     };
 
@@ -284,18 +292,28 @@ async function iosMenu(): Promise<Nav> {
     ], 'back', {
       activeTab: 'iOS',
       leftTitle: 'iOS Management',
-      rightTitle: 'Device Status',
-      rightContentFn: () => buildDeviceStatusLines(),
+      rightTitle: (focused) => {
+        if (focused === 'device-list') return 'Device List';
+        if (focused === 'device-status') return 'Running Devices';
+        return 'Device Status';
+      },
+      rightContentFn: async (focused) => {
+        if (focused === 'device-list') return (await iosDeviceList()) || [];
+        if (focused === 'device-status') return (await iosDeviceStatus()) || [];
+        return buildDeviceStatusLines();
+      },
     });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
 
+    if (choice === 'device-list' || choice === 'device-status') {
+      continue; // Output is already displayed on the right panel
+    }
+
     const actions: Record<string, () => Promise<void>> = {
-      'device-list': iosDeviceList,
       'device-start': () => iosDeviceStart(),
       'device-stop': () => iosDeviceStop(),
-      'device-status': iosDeviceStatus,
     };
 
     const action = actions[choice];
@@ -314,18 +332,28 @@ async function androidMenu(): Promise<Nav> {
     ], 'back', {
       activeTab: 'Android',
       leftTitle: 'Android Management',
-      rightTitle: 'Device Status',
-      rightContentFn: () => buildDeviceStatusLines(),
+      rightTitle: (focused) => {
+        if (focused === 'device-list') return 'Emulator List';
+        if (focused === 'device-status') return 'Running Emulators';
+        return 'Device Status';
+      },
+      rightContentFn: async (focused) => {
+        if (focused === 'device-list') return (await androidDeviceList()) || [];
+        if (focused === 'device-status') return (await androidDeviceStatus()) || [];
+        return buildDeviceStatusLines();
+      },
     });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
 
+    if (choice === 'device-list' || choice === 'device-status') {
+      continue; // Output is already displayed on the right panel
+    }
+
     const actions: Record<string, () => Promise<void>> = {
-      'device-list': androidDeviceList,
       'device-start': () => androidDeviceStart(),
       'device-stop': () => androidDeviceStop(),
-      'device-status': androidDeviceStatus,
     };
 
     const action = actions[choice];

@@ -1,16 +1,18 @@
 import { listDevices } from '../../lib/ios/simulator.js';
 import { logger } from '../../utils/logger.js';
 
-export async function iosDeviceStatus(): Promise<void> {
+import c from 'ansi-colors';
+
+export async function iosDeviceStatus(): Promise<string[] | void> {
   const runningIOS = listDevices().filter(d => d.state === 'Booted');
 
   if (runningIOS.length === 0) {
-    logger.info('No iOS device currently running');
-    return;
+    return [c.cyan('ℹ No iOS device currently running')];
   }
 
-  logger.info('Running iOS Devices:');
+  const lines: string[] = [c.cyan('ℹ Running iOS Devices:')];
   runningIOS.forEach(d => {
-    logger.info(`  - ${d.name} (${d.runtime})`);
+    lines.push(`  - ${d.name} (${d.runtime})`);
   });
+  return lines;
 }

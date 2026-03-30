@@ -36,18 +36,18 @@ async function main(): Promise<void> {
 
   if (a0 === 'ios') {
     if (!a1) return iosHelp();
-    if (a1 === 'device' && a2 === 'list') return iosDeviceList();
+    if (a1 === 'device' && a2 === 'list') { const r = await iosDeviceList(); if (r) r.forEach(l => console.log(l)); return; }
     if (a1 === 'device' && a2 === 'start') return iosDeviceStart(a3);
-    if (a1 === 'device' && a2 === 'status') return iosDeviceStatus();
+    if (a1 === 'device' && a2 === 'status') { const r = await iosDeviceStatus(); if (r) r.forEach(l => console.log(l)); return; }
     if (a1 === 'device' && a2 === 'stop') return iosDeviceStop(a3);
     return iosHelp();
   }
 
   if (a0 === 'android') {
     if (!a1) return androidHelp();
-    if (a1 === 'device' && a2 === 'list') return androidDeviceList();
+    if (a1 === 'device' && a2 === 'list') { const r = await androidDeviceList(); if (r) r.forEach(l => console.log(l)); return; }
     if (a1 === 'device' && a2 === 'start') return androidDeviceStart(a3);
-    if (a1 === 'device' && a2 === 'status') return androidDeviceStatus();
+    if (a1 === 'device' && a2 === 'status') { const r = await androidDeviceStatus(); if (r) r.forEach(l => console.log(l)); return; }
     if (a1 === 'device' && a2 === 'stop') return androidDeviceStop(a3);
     return androidHelp();
   }
