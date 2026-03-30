@@ -386,11 +386,13 @@ async function iosMenu(): Promise<Nav> {
     const actions: Record<string, () => Promise<void>> = {
       'device-start': () => iosDeviceStart(undefined, async (choices, message) => {
         const res = await selectRightMenu(choices, 'cancel', { activeTab: 'iOS', leftTitle: 'iOS Management', leftLines, rightTitle: message });
-        return res === 'cancel' ? null : res;
+        if (res === 'cancel') throw new Error('');
+        return res;
       }),
       'device-stop': () => iosDeviceStop(undefined, async (choices, message) => {
         const res = await selectRightMenu(choices, 'cancel', { activeTab: 'iOS', leftTitle: 'iOS Management', leftLines, rightTitle: message });
-        return res === 'cancel' ? null : res;
+        if (res === 'cancel') throw new Error('');
+        return res;
       }),
     };
 
@@ -432,11 +434,13 @@ async function androidMenu(): Promise<Nav> {
     const actions: Record<string, () => Promise<void>> = {
       'device-start': () => androidDeviceStart(undefined, async (choices, message) => {
         const res = await selectRightMenu(choices, 'cancel', { activeTab: 'Android', leftTitle: 'Android Management', leftLines, rightTitle: message });
-        return res === 'cancel' ? null : res;
+        if (res === 'cancel') throw new Error('');
+        return res;
       }),
       'device-stop': () => androidDeviceStop(undefined, async (choices, message) => {
         const res = await selectRightMenu(choices, 'cancel', { activeTab: 'Android', leftTitle: 'Android Management', leftLines, rightTitle: message });
-        return res === 'cancel' ? null : res;
+        if (res === 'cancel') throw new Error('');
+        return res;
       }),
     };
 
