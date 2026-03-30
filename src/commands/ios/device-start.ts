@@ -4,7 +4,9 @@ import { logger } from '../../utils/logger.js';
 
 const { prompt } = enquirer;
 
-export async function iosDeviceStart(id?: string): Promise<void> {
+export type PromptFn = (choices: any[], message: string) => Promise<string | null>;
+
+export async function iosDeviceStart(id?: string, promptFn?: PromptFn): Promise<void> {
   const devices = listDevices();
   if (devices.length === 0) {
     logger.info('no device currently available');
@@ -27,16 +29,24 @@ export async function iosDeviceStart(id?: string): Promise<void> {
     }
   }
 
-  const response = await prompt<{ device: string }>({
-    type: 'select',
-    name: 'device',
-    message: 'Select a simulator to start',
-    choices,
-    initial,
-  });
+  let targetUdid: string;
+  
+  if (promptFn) {
+    const res = await promptFn(choices, 'Select a simulator to start');
+    if (!res) return; // cancelled
+    targetUdid = res;
+  } else {
+    const response = await prompt<{ device: string }>({
+      type: 'select',
+      name: 'device',
+      message: 'Select a simulator to start',
+      choices,
+      initial,
+    });
+    targetUdid = response.device;
+  }
 
-  const targetUdid = response.device;
-  const targetName = devices.find(d => d.udid === response.device)?.name ?? response.device;
+  const targetName = devices.find(d => d.udid === targetUdid)?.name ?? targetUdid;
 
   logger.info(`Starting ${targetName}...`);
   const result = startDevice(targetUdid);

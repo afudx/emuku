@@ -4,7 +4,9 @@ import { logger } from '../../utils/logger.js';
 
 const { prompt } = enquirer;
 
-export async function androidDeviceStart(id?: string): Promise<void> {
+import type { PromptFn } from '../ios/device-start.js';
+
+export async function androidDeviceStart(id?: string, promptFn?: PromptFn): Promise<void> {
   const devices = listDevices();
   if (devices.length === 0) {
     logger.info('no device currently available');
@@ -28,15 +30,22 @@ export async function androidDeviceStart(id?: string): Promise<void> {
     }
   }
 
-  const response = await prompt<{ device: string }>({
-    type: 'select',
-    name: 'device',
-    message: 'Select an emulator to start',
-    choices,
-    initial,
-  });
+  let targetAvd: string;
 
-  const targetAvd = response.device;
+  if (promptFn) {
+    const res = await promptFn(choices, 'Select an emulator to start');
+    if (!res) return;
+    targetAvd = res;
+  } else {
+    const response = await prompt<{ device: string }>({
+      type: 'select',
+      name: 'device',
+      message: 'Select an emulator to start',
+      choices,
+      initial,
+    });
+    targetAvd = response.device;
+  }
 
   logger.info(`Starting ${targetAvd}...`);
   const result = startDevice(targetAvd);

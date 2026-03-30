@@ -4,7 +4,9 @@ import { logger } from '../../utils/logger.js';
 
 const { prompt } = enquirer;
 
-export async function androidDeviceStop(id?: string): Promise<void> {
+import type { PromptFn } from '../ios/device-start.js';
+
+export async function androidDeviceStop(id?: string, promptFn?: PromptFn): Promise<void> {
   if (id) {
     const device = findDevice(id);
     if (!device) {
@@ -37,14 +39,21 @@ export async function androidDeviceStop(id?: string): Promise<void> {
     value: d.avdName,
   }));
 
-  const response = await prompt<{ device: string }>({
-    type: 'select',
-    name: 'device',
-    message: 'Select an emulator to stop',
-    choices,
-  });
+  let targetAvd: string;
 
-  const targetAvd = response.device;
+  if (promptFn) {
+    const res = await promptFn(choices, 'Select an emulator to stop');
+    if (!res) return;
+    targetAvd = res;
+  } else {
+    const response = await prompt<{ device: string }>({
+      type: 'select',
+      name: 'device',
+      message: 'Select an emulator to stop',
+      choices,
+    });
+    targetAvd = response.device;
+  }
 
   logger.info(`Stopping ${targetAvd}...`);
   const result = stopDevice(targetAvd);

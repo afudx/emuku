@@ -148,12 +148,13 @@ interface PanelConfig {
   rightContentFn: (focusedName?: string) => Promise<string[]> | string[];
 }
 
-async function selectMenu(
+export async function selectMenu(
   choices: ReadonlyArray<{ name: string; message: string } | { role: string; message: string }>,
   cancelAction: string = 'exit',
   panel: PanelConfig,
-): Promise<string> {
+): Promise<{ choice: string; leftLines: string[] }> {
   process.stdout.write('\x1b[3J\x1b[2J\x1b[H');
+  let finalLeftLines: string[] = [];
   try {
     const SelectPrompt = (enquirer as any).Select;
     const lw = leftWidth();
@@ -172,9 +173,10 @@ async function selectMenu(
     const origRenderChoices = promptInstance.renderChoices.bind(promptInstance);
     promptInstance.renderChoices = async function () {
       const rendered: string = await origRenderChoices();
+      const leftLines = rendered.split('\n');
+      finalLeftLines = leftLines;
       if (this.state.submitted) return rendered;
 
-      const leftLines = rendered.split('\n');
       const focusedChoice = this.choices?.[this.index];
       const focusedName = focusedChoice?.name || '';
 
@@ -214,6 +216,76 @@ async function selectMenu(
     };
 
     const response = await promptInstance.run();
+    return { choice: response, leftLines: finalLeftLines };
+  } catch {
+    return { choice: cancelAction, leftLines: [] };
+  }
+}
+
+export interface RightPanelConfig {
+  activeTab?: string;
+  leftTitle: string;
+  leftLines: string[];
+  rightTitle: string;
+}
+
+export async function selectRightMenu(
+  choices: ReadonlyArray<{ name: string; message: string } | { role: string; message: string }>,
+  cancelAction: string,
+  panel: RightPanelConfig,
+): Promise<string> {
+  process.stdout.write('\x1b[3J\x1b[2J\x1b[H');
+  try {
+    const SelectPrompt = (enquirer as any).Select;
+    const lw = leftWidth();
+    const promptInstance = new SelectPrompt({
+      name: 'action',
+      message: ' ',
+      choices: choices as Array<{ name: string; message: string }>,
+      prefix: PAD,
+      margin: [0, 0, 0, PAD.length + 1],
+    });
+
+    promptInstance.separator = () => '';
+    promptInstance.styles.highlight = (str: string) => accent(str);
+    promptInstance.styles.em = (str: string) => accent(str);
+
+    const origRenderChoices = promptInstance.renderChoices.bind(promptInstance);
+    promptInstance.renderChoices = async function () {
+      const rendered: string = await origRenderChoices();
+      if (this.state.submitted) return rendered;
+
+      const rightLines = rendered.split('\n');
+      const rightPanel = buildRightPanel(panel.rightTitle, rightLines, rightLines.length);
+
+      const combined = [];
+      const renderCount = Math.max(panel.leftLines.length, rightPanel.length - 2);
+      for (let i = 0; i < renderCount; i++) {
+        const leftLine = i < panel.leftLines.length ? panel.leftLines[i] : '';
+        const paddedLeft = padEnd(leftLine, lw);
+        const rightLine = i < rightPanel.length - 2 ? rightPanel[i + 1] : boxEmptyLine(rightWidth());
+        combined.push(paddedLeft + ' ' + rightLine);
+      }
+
+      return combined.join('\n');
+    };
+
+    const headerParts = [
+      '',
+      renderTitle(),
+      '',
+      renderTabs(panel.activeTab),
+      '',
+      PAD + boxTopLine(panel.leftTitle, lw) + ' ' + buildRightPanel(panel.rightTitle, [], 0)[0],
+    ];
+    promptInstance.options.header = headerParts.join('\n');
+
+    promptInstance.options.footer = () => {
+      const rp = buildRightPanel(panel.rightTitle, [], 0);
+      return '\n' + PAD + boxBottomLine(lw) + ' ' + rp[rp.length - 1];
+    };
+
+    const response = await promptInstance.run();
     return response;
   } catch {
     return cancelAction;
@@ -233,7 +305,7 @@ export async function startInteractive(): Promise<void> {
 
   try {
     while (true) {
-      const choice = await selectMenu([
+      const { choice } = await selectMenu([
         item('ios',     '○', 'iOS'),
         item('android', '△', 'Android'),
         item('runtime', '◇', 'Runtime'),
@@ -283,7 +355,7 @@ export async function startInteractive(): Promise<void> {
 
 async function iosMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu([
+    const { choice, leftLines } = await selectMenu([
       item('device-list',   '≡', 'Device List'),
       item('device-start',  '▶', 'Device Start'),
       item('device-stop',   '■', 'Device Stop'),
@@ -312,8 +384,14 @@ async function iosMenu(): Promise<Nav> {
     }
 
     const actions: Record<string, () => Promise<void>> = {
-      'device-start': () => iosDeviceStart(),
-      'device-stop': () => iosDeviceStop(),
+      'device-start': () => iosDeviceStart(undefined, async (choices, message) => {
+        const res = await selectRightMenu(choices, 'cancel', { activeTab: 'iOS', leftTitle: 'iOS Management', leftLines, rightTitle: message });
+        return res === 'cancel' ? null : res;
+      }),
+      'device-stop': () => iosDeviceStop(undefined, async (choices, message) => {
+        const res = await selectRightMenu(choices, 'cancel', { activeTab: 'iOS', leftTitle: 'iOS Management', leftLines, rightTitle: message });
+        return res === 'cancel' ? null : res;
+      }),
     };
 
     const action = actions[choice];
@@ -323,7 +401,7 @@ async function iosMenu(): Promise<Nav> {
 
 async function androidMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu([
+    const { choice, leftLines } = await selectMenu([
       item('device-list',   '≡', 'Device List'),
       item('device-start',  '▶', 'Device Start'),
       item('device-stop',   '■', 'Device Stop'),
@@ -352,8 +430,14 @@ async function androidMenu(): Promise<Nav> {
     }
 
     const actions: Record<string, () => Promise<void>> = {
-      'device-start': () => androidDeviceStart(),
-      'device-stop': () => androidDeviceStop(),
+      'device-start': () => androidDeviceStart(undefined, async (choices, message) => {
+        const res = await selectRightMenu(choices, 'cancel', { activeTab: 'Android', leftTitle: 'Android Management', leftLines, rightTitle: message });
+        return res === 'cancel' ? null : res;
+      }),
+      'device-stop': () => androidDeviceStop(undefined, async (choices, message) => {
+        const res = await selectRightMenu(choices, 'cancel', { activeTab: 'Android', leftTitle: 'Android Management', leftLines, rightTitle: message });
+        return res === 'cancel' ? null : res;
+      }),
     };
 
     const action = actions[choice];
@@ -363,7 +447,7 @@ async function androidMenu(): Promise<Nav> {
 
 async function runtimeMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu([
+    const { choice } = await selectMenu([
       { name: 'run-ios',     message: `${accent('▶')}  Run in iOS Simulator` },
       { name: 'run-android', message: `${accent('▶')}  Run in Android Emulator` },
       item('status',      '◉', 'Status'),
@@ -391,7 +475,7 @@ async function runtimeMenu(): Promise<Nav> {
 
 async function setupMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu([
+    const { choice } = await selectMenu([
       item('setup-ios',     '↧', 'Setup iOS'),
       item('setup-android', '↧', 'Setup Android'),
       ...navItems(),
@@ -417,7 +501,7 @@ async function setupMenu(): Promise<Nav> {
 
 async function utilityMenu(): Promise<Nav> {
   while (true) {
-    const choice = await selectMenu([
+    const { choice } = await selectMenu([
       item('bash-completion', '↳', 'Bash Completion'),
       ...navItems(),
     ], 'back', {

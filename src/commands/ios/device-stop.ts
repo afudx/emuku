@@ -4,7 +4,9 @@ import { logger } from '../../utils/logger.js';
 
 const { prompt } = enquirer;
 
-export async function iosDeviceStop(id?: string): Promise<void> {
+import type { PromptFn } from './device-start.js';
+
+export async function iosDeviceStop(id?: string, promptFn?: PromptFn): Promise<void> {
   if (id) {
     const device = findDevice(id);
     if (!device) {
@@ -37,14 +39,22 @@ export async function iosDeviceStop(id?: string): Promise<void> {
     value: d.udid,
   }));
 
-  const response = await prompt<{ device: string }>({
-    type: 'select',
-    name: 'device',
-    message: 'Select a simulator to stop',
-    choices,
-  });
+  let targetUdid: string;
+  
+  if (promptFn) {
+    const res = await promptFn(choices, 'Select a simulator to stop');
+    if (!res) return; // cancelled
+    targetUdid = res;
+  } else {
+    const response = await prompt<{ device: string }>({
+      type: 'select',
+      name: 'device',
+      message: 'Select a simulator to stop',
+      choices,
+    });
+    targetUdid = response.device;
+  }
 
-  const targetUdid = response.device;
   const targetName = running.find(d => d.udid === targetUdid)?.name ?? targetUdid;
 
   logger.info(`Stopping ${targetName}...`);
