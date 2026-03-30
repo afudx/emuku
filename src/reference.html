@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>EMUKU Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&amp;display=swap"
+        rel="stylesheet" />
+    <style data-purpose="custom-fonts-and-colors">
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: #20262b;
+            /* Dark gray/blue */
+            color: #e5e7eb;
+            /* Light text */
+        }
+
+        .text-orange-accent {
+            color: #f97316;
+            /* Bright orange */
+        }
+
+        .bg-orange-accent {
+            background-color: #f97316;
+        }
+
+        .border-orange-accent {
+            border-color: #f97316;
+        }
+
+        /* ASCII Art font styling for EMUKU */
+        .ascii-title {
+            font-family: monospace;
+            font-weight: bold;
+            color: #f97316;
+            text-shadow: 2px 0 0 #9a3412, -2px 0 0 #9a3412, 0 2px 0 #9a3412, 0 -2px 0 #9a3412, 1px 1px 0 #9a3412, -1px -1px 0 #9a3412, 1px -1px 0 #9a3412, -1px 1px 0 #9a3412, 3px 3px 0 #000, 4px 4px 0 #000, 5px 5px 0 #000;
+            letter-spacing: 0.2em;
+        }
+
+        /* TUI Panel borders */
+        .tui-panel {
+            position: relative;
+            border: 1px solid #f97316;
+            border-radius: 0;
+        }
+
+        .tui-panel-title {
+            position: absolute;
+            top: -0.75rem;
+            left: 1rem;
+            background-color: #20262b;
+            padding: 0 0.5rem;
+            color: #f97316;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-6 flex flex-col gap-6">
+    <!-- BEGIN: Header -->
+    <header class="flex flex-col items-center gap-6">
+        <!-- ASCII Title -->
+        <div class="text-orange-accent text-5xl md:text-7xl ascii-title tracking-widest text-center"
+            data-purpose="main-title">
+            EMUKU
+        </div>
+        <!-- Navigation -->
+        <nav class="flex flex-wrap justify-between gap-4 md:gap-8 text-sm md:text-base w-full max-w-5xl mx-auto px-8"
+            data-purpose="top-navigation">
+            <div class="flex items-center gap-2">
+                <span class="text-gray-400">[</span>
+                <span class="hover:text-white cursor-pointer transition-colors">iOS</span>
+                <span class="text-gray-400">]</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="hover:text-white cursor-pointer transition-colors">Android</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-gray-400">[</span>
+                <span class="bg-orange-accent text-[#20262b] px-4 py-1 font-bold cursor-pointer">Runtime</span>
+                <span class="text-gray-400">]</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-gray-400">[</span>
+                <span class="hover:text-white cursor-pointer transition-colors">Setup</span>
+                <span class="text-gray-400">]</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-gray-400">[</span>
+                <span class="hover:text-white cursor-pointer transition-colors">Utility</span>
+                <span class="text-gray-400">]</span>
+            </div>
+        </nav>
+    </header>
+    <!-- END: Header -->
+    <!-- BEGIN: Main Content Area -->
+    <main class="flex-1 flex flex-col lg:flex-row gap-6 max-w-7xl w-full mx-auto" data-purpose="main-panels">
+        <!-- Left Panel: Runtime Management -->
+        <section class="tui-panel flex-[1] p-6 pt-8 mt-4 lg:mt-0" data-purpose="runtime-management-panel">
+            <h2 class="tui-panel-title text-sm md:text-base">Runtime Management</h2>
+            <ul class="flex flex-col gap-4 text-sm md:text-base">
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors">
+                    <span class="text-orange-accent text-lg">●</span>
+                    <span>Process List</span>
+                </li>
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors">
+                    <span class="text-orange-accent text-lg">▶</span>
+                    <span>Restart Services</span>
+                </li>
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors">
+                    <span class="text-orange-accent text-lg">■</span>
+                    <span>Terminate All</span>
+                </li>
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors">
+                    <span class="text-orange-accent text-lg">○</span>
+                    <span>Resource Usage</span>
+                </li>
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors mt-2">
+                    <span class="text-orange-accent text-lg">←</span>
+                    <span>Back</span>
+                </li>
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors">
+                    <span class="text-orange-accent text-lg">⌂</span>
+                    <span>Home</span>
+                </li>
+                <li class="flex items-center gap-4 hover:bg-gray-800 p-1 rounded cursor-pointer transition-colors">
+                    <span class="text-orange-accent text-lg">✕</span>
+                    <span>Exit</span>
+                </li>
+            </ul>
+        </section>
+        <!-- Right Panel: Runtime Statistics -->
+        <section class="tui-panel flex-[2] p-6 pt-8 mt-4 lg:mt-0" data-purpose="runtime-statistics-panel">
+            <h2 class="tui-panel-title text-sm md:text-base">Runtime Statistics</h2>
+            <div class="flex flex-col gap-1 text-sm md:text-base text-gray-300">
+                <div class="flex flex-col gap-1 text-sm md:text-base text-gray-300">CPU Usage: <span
+                        class="text-white">12%</span></div>
+                <div class="flex flex-col gap-1 text-sm md:text-base text-gray-300">Memory: <span
+                        class="text-white">1.2GB / 16GB</span></div>
+                <div class="flex flex-col gap-1 text-sm md:text-base text-gray-300">Active Processes: <span
+                        class="text-white">45</span></div>
+                <div class="flex flex-col gap-1 text-sm md:text-base text-gray-300">Uptime: <span
+                        class="text-white">02:45:12</span></div>
+            </div>
+        </section>
+    </main>
+    <!-- END: Main Content Area -->
+    <!-- BEGIN: Logs Panel -->
+    <footer class="max-w-7xl w-full mx-auto" data-purpose="logs-section">
+        <section class="tui-panel p-4 pt-6 mt-4 h-48 overflow-y-auto">
+            <h2 class="tui-panel-title text-sm md:text-base">LOGS</h2>
+            <div class="text-xs md:text-sm font-mono flex flex-col gap-1 text-gray-400">
+                <div><span class="text-gray-500">[10:48:05]</span> <span class="text-orange-accent">[INFO]</span> <span
+                        class="text-gray-300">Runtime environment initialized.</span></div>
+                <div><span class="text-gray-500">[10:48:12]</span> <span class="text-orange-accent">[INFO]</span> <span
+                        class="text-gray-300">Starting service: core-engine</span></div>
+                <div><span class="text-gray-500">[10:48:15]</span> <span class="text-green-500">[SUCCESS]</span> <span
+                        class="text-gray-300">core-engine started successfully.</span></div>
+                <div><span class="text-gray-500">[10:48:18]</span> <span class="text-orange-accent">[INFO]</span> <span
+                        class="text-gray-300">Active process count: 45</span></div>
+                <div><span class="text-gray-500">[10:48:30]</span> <span class="text-orange-accent">[INFO]</span> <span
+                        class="text-gray-300">Resource monitoring active.</span></div>
+            </div>
+        </section>
+    </footer>
+    <!-- END: Logs Panel -->
+</body>
+
+</html>
