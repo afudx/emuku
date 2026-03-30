@@ -21,17 +21,21 @@ import { listDevices as listAndroidDevices } from '../lib/android/emulator.js';
 const PAD = '  ';
 const ORANGE = '\x1b[38;2;249;115;22m';
 const BG_ORANGE = '\x1b[48;2;249;115;22m';
-const DARK_BG = '\x1b[38;2;32;38;43m';
+const DARK_FG = '\x1b[38;2;32;38;43m';
 const RST = '\x1b[0m';
+const BOLD = '\x1b[1m';
 
-function accent(str: string): string {
-  return `${ORANGE}${str}${RST}`;
+function accent(str: string): string { return `${ORANGE}${str}${RST}`; }
+function accentBold(str: string): string { return `${BOLD}${ORANGE}${str}${RST}`; }
+function accentInverse(str: string): string { return `${BOLD}${BG_ORANGE}${DARK_FG}${str}${RST}`; }
+
+function visLen(str: string): number {
+  return str.replace(/\x1b\[[0-9;]*m/g, '').length;
 }
-function accentBold(str: string): string {
-  return `\x1b[1m${ORANGE}${str}${RST}`;
-}
-function accentInverse(str: string): string {
-  return `\x1b[1m${BG_ORANGE}${DARK_BG}${str}${RST}`;
+
+function padEnd(str: string, width: number): string {
+  const diff = width - visLen(str);
+  return diff > 0 ? str + ' '.repeat(diff) : str;
 }
 
 type Nav = 'back' | 'home' | 'exit';
@@ -39,9 +43,7 @@ type Nav = 'back' | 'home' | 'exit';
 const CATEGORIES = ['iOS', 'Android', 'Runtime', 'Setup', 'Utility'] as const;
 
 let sepId = 0;
-function SEP() {
-  return { role: 'heading', name: `__sep_${sepId++}`, message: ' ' };
-}
+function SEP() { return { role: 'heading', name: `__sep_${sepId++}`, message: ' ' }; }
 
 function item(name: string, icon: string, label: string) {
   return { name, message: `${accent(icon)}  ${label}` };
@@ -56,13 +58,9 @@ function navItems() {
   ] as const;
 }
 
-function cols(): number {
-  return process.stdout.columns || 80;
-}
-
-function boxWidth(): number {
-  return Math.min(cols() - 4, 70);
-}
+function totalWidth(): number { return process.stdout.columns || 80; }
+function leftWidth(): number { return Math.max(Math.floor((totalWidth() - 4) / 4), 24); }
+function rightWidth(): number { return totalWidth() - 4 - leftWidth() - 1; }
 
 const ASCII_TITLE = [
   '███████╗███╗   ███╗██╗   ██╗██╗  ██╗██╗   ██╗',
@@ -87,82 +85,125 @@ function renderTabs(active?: string): string {
   return PAD + tabs.join('  ');
 }
 
-function boxTop(title: string): string {
-  const w = boxWidth();
+function boxTopLine(title: string, width: number): string {
   const titleStr = ` ${title} `;
-  const lineLen = w - 2 - titleStr.length;
-  const line = '─'.repeat(Math.max(lineLen, 2));
-  return PAD + accent('┌─') + accentBold(titleStr) + accent(line + '┐');
+  const lineLen = Math.max(width - 2 - titleStr.length, 2);
+  return accent('┌─') + accentBold(titleStr) + accent('─'.repeat(lineLen) + '┐');
 }
 
-function boxBottom(): string {
-  const w = boxWidth();
-  return PAD + accent('└' + '─'.repeat(w - 2) + '┘');
+function boxBottomLine(width: number): string {
+  return accent('└' + '─'.repeat(width - 2) + '┘');
 }
 
-function boxRow(content: string): string {
-  return PAD + accent('│') + ' ' + content;
+function boxMidLine(content: string, width: number): string {
+  const inner = width - 4;
+  return accent('│') + ' ' + padEnd(content, inner) + ' ' + accent('│');
 }
 
-function renderStatusFooter(): string {
+function boxEmptyLine(width: number): string {
+  return accent('│') + ' '.repeat(width - 2) + accent('│');
+}
+
+const SUBMENU_PREVIEW: Record<string, string[]> = {
+  ios:     ['≡  Device List', '▶  Device Start', '■  Device Stop', '◉  Device Status'],
+  android: ['≡  Device List', '▶  Device Start', '■  Device Stop', '◉  Device Status'],
+  runtime: ['▶  Run in iOS Simulator', '▶  Run in Android Emulator', '◉  Status'],
+  setup:   ['↧  Setup iOS', '↧  Setup Android'],
+  utility: ['↳  Bash Completion'],
+  exit:    [],
+};
+
+function buildRightPanel(title: string, lines: string[], height: number): string[] {
+  const rw = rightWidth();
+  const result: string[] = [];
+  result.push(boxTopLine(title, rw));
+  for (let i = 0; i < height; i++) {
+    if (i < lines.length) {
+      result.push(boxMidLine(lines[i], rw));
+    } else {
+      result.push(boxEmptyLine(rw));
+    }
+  }
+  result.push(boxBottomLine(rw));
+  return result;
+}
+
+function buildDeviceStatusLines(): string[] {
   const iosBooted = listIosDevices().filter(d => d.state === 'Booted').length;
   const androidRunning = listAndroidDevices().filter(d => d.state === 'Running').length;
   const total = iosBooted + androidRunning;
-
   const lines = [
-    boxTop('Device Status'),
-    boxRow(`${total} devices running, ${androidRunning} android, ${iosBooted} iOS`),
-    boxRow(c.dim(process.cwd())),
-    boxBottom(),
+    `${total} devices running`,
+    `${androidRunning} android, ${iosBooted} iOS`,
+    '',
+    c.dim(process.cwd()),
   ];
-  return lines.join('\n');
+  return lines;
 }
 
-function getHeader(activeTab?: string, panelTitle?: string): string {
-  const parts = [
-    '',
-    renderTitle(),
-    '',
-    renderTabs(activeTab),
-    '',
-    boxTop(panelTitle || 'Menu'),
-    boxRow(''),
-  ];
-  return parts.join('\n');
-}
-
-function getFooter(): string {
-  const parts = [
-    boxRow(''),
-    boxBottom(),
-    '',
-    renderStatusFooter(),
-  ];
-  return parts.join('\n');
+interface PanelConfig {
+  activeTab?: string;
+  leftTitle: string;
+  rightTitle: string;
+  rightContentFn: (focusedName?: string) => string[];
 }
 
 async function selectMenu(
   choices: ReadonlyArray<{ name: string; message: string } | { role: string; message: string }>,
   cancelAction: string = 'exit',
-  activeTab?: string,
-  panelTitle?: string,
+  panel: PanelConfig,
 ): Promise<string> {
   process.stdout.write('\x1b[3J\x1b[2J\x1b[H');
   try {
     const SelectPrompt = (enquirer as any).Select;
+    const lw = leftWidth();
     const promptInstance = new SelectPrompt({
       name: 'action',
       message: ' ',
       choices: choices as Array<{ name: string; message: string }>,
       prefix: PAD,
-      margin: [0, 0, 0, PAD.length + 3],
+      margin: [0, 0, 0, PAD.length + 1],
     });
 
-    promptInstance.options.header = getHeader(activeTab, panelTitle);
-    promptInstance.options.footer = () => getFooter();
     promptInstance.separator = () => '';
     promptInstance.styles.highlight = (str: string) => accent(str);
     promptInstance.styles.em = (str: string) => accent(str);
+
+    const origRenderChoices = promptInstance.renderChoices.bind(promptInstance);
+    promptInstance.renderChoices = async function () {
+      const rendered: string = await origRenderChoices();
+      if (this.state.submitted) return rendered;
+
+      const leftLines = rendered.split('\n');
+      const focusedChoice = this.choices?.[this.index];
+      const focusedName = focusedChoice?.name || '';
+
+      const rightContent = panel.rightContentFn(focusedName);
+      const rightPanel = buildRightPanel(panel.rightTitle, rightContent, leftLines.length);
+
+      const combined = leftLines.map((line: string, i: number) => {
+        const paddedLeft = padEnd(line, lw);
+        const rightLine = i < rightPanel.length - 2 ? rightPanel[i + 1] : boxEmptyLine(rightWidth());
+        return paddedLeft + ' ' + rightLine;
+      });
+
+      return combined.join('\n');
+    };
+
+    const headerParts = [
+      '',
+      renderTitle(),
+      '',
+      renderTabs(panel.activeTab),
+      '',
+      PAD + boxTopLine(panel.leftTitle, lw) + ' ' + buildRightPanel(panel.rightTitle, panel.rightContentFn(), 0)[0],
+    ];
+    promptInstance.options.header = headerParts.join('\n');
+
+    promptInstance.options.footer = () => {
+      const rp = buildRightPanel(panel.rightTitle, [], 0);
+      return '\n' + PAD + boxBottomLine(lw) + ' ' + rp[rp.length - 1];
+    };
 
     const response = await promptInstance.run();
     return response;
@@ -192,7 +233,18 @@ export async function startInteractive(): Promise<void> {
         item('utility', '⊞', 'Utility'),
         SEP(),
         { name: 'exit', message: `${accent('✕')}  Exit` },
-      ], 'exit', undefined, 'Main Menu');
+      ], 'exit', {
+        leftTitle: 'Main Menu',
+        rightTitle: 'Preview',
+        rightContentFn: (focused) => {
+          if (focused && SUBMENU_PREVIEW[focused]) {
+            const items = SUBMENU_PREVIEW[focused];
+            if (items.length === 0) return [c.dim('Exit emuku')];
+            return items.map(i => accent(i.charAt(0)) + i.slice(1));
+          }
+          return buildDeviceStatusLines();
+        },
+      });
 
       if (choice === 'exit') {
         exitAltScreen();
@@ -229,7 +281,12 @@ async function iosMenu(): Promise<Nav> {
       item('device-stop',   '■', 'Device Stop'),
       item('device-status', '◉', 'Device Status'),
       ...navItems(),
-    ], 'back', 'iOS', 'iOS Management');
+    ], 'back', {
+      activeTab: 'iOS',
+      leftTitle: 'iOS Management',
+      rightTitle: 'Device Status',
+      rightContentFn: () => buildDeviceStatusLines(),
+    });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -242,9 +299,7 @@ async function iosMenu(): Promise<Nav> {
     };
 
     const action = actions[choice];
-    if (action) {
-      await runAction(action);
-    }
+    if (action) await runAction(action);
   }
 }
 
@@ -256,7 +311,12 @@ async function androidMenu(): Promise<Nav> {
       item('device-stop',   '■', 'Device Stop'),
       item('device-status', '◉', 'Device Status'),
       ...navItems(),
-    ], 'back', 'Android', 'Android Management');
+    ], 'back', {
+      activeTab: 'Android',
+      leftTitle: 'Android Management',
+      rightTitle: 'Device Status',
+      rightContentFn: () => buildDeviceStatusLines(),
+    });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -269,20 +329,23 @@ async function androidMenu(): Promise<Nav> {
     };
 
     const action = actions[choice];
-    if (action) {
-      await runAction(action);
-    }
+    if (action) await runAction(action);
   }
 }
 
 async function runtimeMenu(): Promise<Nav> {
   while (true) {
     const choice = await selectMenu([
-      { name: 'run-ios',     message: `${accent('▶')}  Run in iOS Simulator       ${c.dim('run flutter app in cwd in iOS')}` },
-      { name: 'run-android', message: `${accent('▶')}  Run in Android Emulator    ${c.dim('run flutter app in cwd in Android')}` },
+      { name: 'run-ios',     message: `${accent('▶')}  Run in iOS Simulator` },
+      { name: 'run-android', message: `${accent('▶')}  Run in Android Emulator` },
       item('status',      '◉', 'Status'),
       ...navItems(),
-    ], 'back', 'Runtime', 'Runtime Management');
+    ], 'back', {
+      activeTab: 'Runtime',
+      leftTitle: 'Runtime Management',
+      rightTitle: 'Device Status',
+      rightContentFn: () => buildDeviceStatusLines(),
+    });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -294,9 +357,7 @@ async function runtimeMenu(): Promise<Nav> {
     };
 
     const action = actions[choice];
-    if (action) {
-      await runAction(action);
-    }
+    if (action) await runAction(action);
   }
 }
 
@@ -306,7 +367,12 @@ async function setupMenu(): Promise<Nav> {
       item('setup-ios',     '↧', 'Setup iOS'),
       item('setup-android', '↧', 'Setup Android'),
       ...navItems(),
-    ], 'back', 'Setup', 'Setup');
+    ], 'back', {
+      activeTab: 'Setup',
+      leftTitle: 'Setup',
+      rightTitle: 'Device Status',
+      rightContentFn: () => buildDeviceStatusLines(),
+    });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -317,9 +383,7 @@ async function setupMenu(): Promise<Nav> {
     };
 
     const action = actions[choice];
-    if (action) {
-      await runAction(action);
-    }
+    if (action) await runAction(action);
   }
 }
 
@@ -328,7 +392,12 @@ async function utilityMenu(): Promise<Nav> {
     const choice = await selectMenu([
       item('bash-completion', '↳', 'Bash Completion'),
       ...navItems(),
-    ], 'back', 'Utility', 'Utility');
+    ], 'back', {
+      activeTab: 'Utility',
+      leftTitle: 'Utility',
+      rightTitle: 'Device Status',
+      rightContentFn: () => buildDeviceStatusLines(),
+    });
 
     if (choice === 'back' || choice === 'home') return choice;
     if (choice === 'exit') return 'exit';
@@ -338,9 +407,7 @@ async function utilityMenu(): Promise<Nav> {
     };
 
     const action = actions[choice];
-    if (action) {
-      await runAction(action);
-    }
+    if (action) await runAction(action);
   }
 }
 
