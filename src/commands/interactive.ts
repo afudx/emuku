@@ -19,8 +19,20 @@ import { listDevices as listIosDevices } from '../lib/ios/simulator.js';
 import { listDevices as listAndroidDevices } from '../lib/android/emulator.js';
 
 const PAD = '  ';
-const accent = (c as any).hex('#f97316') as c.StyleFunction;
-const accentBold = ((c as any).bold.hex('#f97316')) as c.StyleFunction;
+const ORANGE = '\x1b[38;2;249;115;22m';
+const BG_ORANGE = '\x1b[48;2;249;115;22m';
+const DARK_BG = '\x1b[38;2;32;38;43m';
+const RST = '\x1b[0m';
+
+function accent(str: string): string {
+  return `${ORANGE}${str}${RST}`;
+}
+function accentBold(str: string): string {
+  return `\x1b[1m${ORANGE}${str}${RST}`;
+}
+function accentInverse(str: string): string {
+  return `\x1b[1m${BG_ORANGE}${DARK_BG}${str}${RST}`;
+}
 
 type Nav = 'back' | 'home' | 'exit';
 
@@ -68,7 +80,7 @@ function renderTitle(): string {
 function renderTabs(active?: string): string {
   const tabs = CATEGORIES.map(cat => {
     if (active && cat === active) {
-      return `${c.dim('[')} ${(c as any).bgHex('#f97316').hex('#20262b').bold(` ${cat} `)} ${c.dim(']')}`;
+      return `${c.dim('[')} ${accentInverse(` ${cat} `)} ${c.dim(']')}`;
     }
     return `${c.dim('[')} ${c.white(cat)} ${c.dim(']')}`;
   });
