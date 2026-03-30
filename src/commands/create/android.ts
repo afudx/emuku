@@ -1,25 +1,36 @@
+import c from 'ansi-colors';
 import { checkPrerequisites, installMissing } from '../../lib/android/prerequisites.js';
 import { renderChecklist } from '../../utils/checklist.js';
 import { logger } from '../../utils/logger.js';
 
-export async function createAndroid(): Promise<void> {
-  logger.heading('Android Emulator Prerequisites');
-  console.log();
+export async function createAndroidStatus(): Promise<string[]> {
+  const lines: string[] = [];
+  lines.push(c.bold('Android Emulator Prerequisites'));
+  lines.push('');
 
   const checks = checkPrerequisites();
-  renderChecklist(checks);
-  console.log();
+  lines.push(...renderChecklist(checks));
+  lines.push('');
 
   const missing = checks.filter(c => !c.installed);
 
   if (missing.length === 0) {
-    logger.success('All prerequisites are installed. You\'re ready to use Android emulators.');
-    logger.info('Run: emuku android device list  — to see available emulators');
-    return;
+    lines.push(c.green('All prerequisites are installed.'));
+  } else {
+    lines.push(c.yellow(`${missing.length} prerequisite(s) missing.`));
   }
 
-  logger.warn(`${missing.length} prerequisite(s) missing.`);
-  console.log();
+  return lines;
+}
+
+export async function createAndroid(leftLines?: string[]): Promise<void> {
+  const checks = checkPrerequisites();
+  const missing = checks.filter(c => !c.installed);
+
+  if (missing.length === 0) {
+    logger.success('All prerequisites are installed. You\'re ready to use Android emulators.');
+    return;
+  }
 
   await installMissing(missing);
 
@@ -28,13 +39,11 @@ export async function createAndroid(): Promise<void> {
   console.log();
 
   const rechecked = checkPrerequisites();
-  renderChecklist(rechecked);
-  console.log();
 
   const stillMissing = rechecked.filter(c => !c.installed);
   if (stillMissing.length === 0) {
     logger.success('All prerequisites installed successfully!');
   } else {
-    logger.warn(`${stillMissing.length} item(s) still need attention.`);
+    logger.warn('Some items still need attention.');
   }
 }

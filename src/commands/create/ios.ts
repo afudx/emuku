@@ -1,30 +1,41 @@
+import c from 'ansi-colors';
 import { checkPrerequisites, installMissing } from '../../lib/ios/prerequisites.js';
 import { renderChecklist } from '../../utils/checklist.js';
 import { logger } from '../../utils/logger.js';
 
-export async function createIos(): Promise<void> {
+export async function createIosStatus(): Promise<string[]> {
+  const lines: string[] = [];
   if (process.platform !== 'darwin') {
-    logger.error('iOS simulator management is only supported on macOS');
-    return;
+    lines.push(c.red('iOS simulator management is only supported on macOS'));
+    return lines;
   }
 
-  logger.heading('iOS Simulator Prerequisites');
-  console.log();
+  lines.push(c.bold('iOS Simulator Prerequisites'));
+  lines.push('');
 
   const checks = checkPrerequisites();
-  renderChecklist(checks);
-  console.log();
+  lines.push(...renderChecklist(checks));
+  lines.push('');
 
   const missing = checks.filter(c => !c.installed);
 
   if (missing.length === 0) {
-    logger.success('All prerequisites are installed. You\'re ready to use iOS simulators.');
-    logger.info('Run: emuku ios device list  — to see available simulators');
-    return;
+    lines.push(c.green('All prerequisites are installed.'));
+  } else {
+    lines.push(c.yellow(`${missing.length} prerequisite(s) missing.`));
   }
 
-  logger.warn(`${missing.length} prerequisite(s) missing.`);
-  console.log();
+  return lines;
+}
+
+export async function createIos(leftLines?: string[]): Promise<void> {
+  const checks = checkPrerequisites();
+  const missing = checks.filter(c => !c.installed);
+
+  if (missing.length === 0) {
+    logger.success('All prerequisites are installed. You\'re ready to use iOS simulators.');
+    return;
+  }
 
   await installMissing(missing);
 
@@ -33,13 +44,9 @@ export async function createIos(): Promise<void> {
   console.log();
 
   const rechecked = checkPrerequisites();
-  renderChecklist(rechecked);
-  console.log();
-
-  const stillMissing = rechecked.filter(c => !c.installed);
-  if (stillMissing.length === 0) {
+  if (rechecked.filter(c => !c.installed).length === 0) {
     logger.success('All prerequisites installed successfully!');
   } else {
-    logger.warn(`${stillMissing.length} item(s) still need attention.`);
+    logger.warn('Some items still need attention.');
   }
 }

@@ -12,8 +12,8 @@ import { androidDeviceStatus } from './android/device-status.js';
 import { appRunIos } from './app/run-ios.js';
 import { appRunAndroid } from './app/run-android.js';
 import { status } from './status.js';
-import { createIos } from './create/ios.js';
-import { createAndroid } from './create/android.js';
+import { createIos, createIosStatus } from './create/ios.js';
+import { createAndroid, createAndroidStatus } from './create/android.js';
 import { bashCompletion } from './tools/bash-completion.js';
 import { listDevices as listIosDevices } from '../lib/ios/simulator.js';
 import { listDevices as listAndroidDevices } from '../lib/android/emulator.js';
@@ -496,8 +496,12 @@ async function setupMenu(): Promise<Nav> {
     ], 'back', {
       activeTab: 'Setup',
       leftTitle: 'Setup',
-      rightTitle: 'Device Status',
-      rightContentFn: () => buildDeviceStatusLines(),
+      rightTitle: 'Prerequisites',
+      rightContentFn: async (focused) => {
+        if (focused === 'setup-ios') return await createIosStatus();
+        if (focused === 'setup-android') return await createAndroidStatus();
+        return buildDeviceStatusLines();
+      },
     });
 
     if (choice === 'back' || choice === 'home') return choice;

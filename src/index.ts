@@ -6,8 +6,8 @@ import { iosDeviceList } from './commands/ios/device-list.js';
 import { iosDeviceStart } from './commands/ios/device-start.js';
 import { androidDeviceList } from './commands/android/device-list.js';
 import { androidDeviceStart } from './commands/android/device-start.js';
-import { createIos } from './commands/create/ios.js';
-import { createAndroid } from './commands/create/android.js';
+import { createIos, createIosStatus } from './commands/create/ios.js';
+import { createAndroid, createAndroidStatus } from './commands/create/android.js';
 import { bashCompletion } from './commands/tools/bash-completion.js';
 import { appRunIos } from './commands/app/run-ios.js';
 import { appRunAndroid } from './commands/app/run-android.js';
@@ -55,8 +55,16 @@ async function main(): Promise<void> {
   }
 
   if (a0 === 'create') {
-    if (a1 === 'ios') return createIos();
-    if (a1 === 'android') return createAndroid();
+    if (a1 === 'ios') {
+      const res = await createIosStatus();
+      if (res) res.forEach(l => console.log(l));
+      return createIos();
+    }
+    if (a1 === 'android') {
+      const res = await createAndroidStatus();
+      if (res) res.forEach(l => console.log(l));
+      return createAndroid();
+    }
   }
 
   if (a0 === 'tools' && a1 === 'bash-completion') {
